@@ -9,9 +9,9 @@ An easy &amp; structured way to use events, streams and promises in Node AND bro
 
 ### Definitions
 
-
-| Word       | Definition    | Implementation      |         
+| Word       | Definition    | Details      |         
 | ---------- | ------------- | ------------------- |
-| message    | Data          | JS object           |
-| handler    | Code          | JS function         |
-| structure  | Class         | JS object           |
+| message    | Data to transfer asynchronously between two pieces of code. | JS object. May have a name. Belongs to a structure.  |
+| structure  | Class that defines a message structure | Special structured object, with XML-like properties |
+| channel    | Messages container. | Acts mainly (but not solely) as a FIFO queue. transports messages between handlers. Implements promise-like behaviour. |
+| handler    | Code that emits (and waits for) messages. | JS function. Sends messages to channels. Waits for messages from channels. |
