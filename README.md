@@ -9,8 +9,9 @@ An easy &amp; structured way to use events, streams and promises in Node AND bro
 
 ### Definitions
 
-Word      | Definition | Implementation
----------------------------------------
-message   | A piece of data to transfer between two pieces of code | JS object properties
-handler   | A piece of code that emits and waits for messages | JS function 
-structure | A specific "class" that defines a message structure | JS object
+Word       | Definition | Implementation
+---------- | -----------------------------
+message    | A piece of data to transfer between two pieces of code | JS object properties
+handler    | A piece of code that emits and waits for messages | JS function 
+structure  | A specific "class" that defines a message structure | JS object
+
