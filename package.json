@@ -1,0 +1,27 @@
+{
+  "name": "codegrid",
+  "version": "1.0.0",
+  "description": "An easy &amp; structured way to use events, streams and promises in Node AND browser. Suitable for large scale apps.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tsalkakis-d/codegrid.git"
+  },
+  "author": "D.Tsalkakis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tsalkakis-d/codegrid/issues"
+  },
+  "homepage": "https://github.com/tsalkakis-d/codegrid#readme",
+  "keywords": [
+    "node.js",
+    "events",
+    "promises",
+    "streams",
+    "pipes",
+    "structure"
+  ]
+}
