@@ -1,29 +1,72 @@
 # codegrid
 An easy &amp; structured way to use events, streams and promises in Node AND browser. Suitable for large scale apps.
-
+## Status
+Under construction!
 
 ### Introduction
 
-**codegrid** is a lightweight framework designed to simplify Javascript asynchronous programming, with emphasis on program readability.
-
+**codegrid** is a lightweight framework designed to simplify Javascript asynchronous programming, with emphasis on program readability. It can be used in both client (web browser) and server (node.js).
 
 ### Definitions
+- __message__ A data object to transfer asynchronously between two pieces of code.
+- __structure__ A set or XML-like rules defining the properties of a message object.
+- __channel__  A FIFO message buffer with awaiting and promise-like behaviour.
+	- __onMessage__ is a channel function that executes when a message arrives.
+	- __push__  is the action of sending a message to a channel.
+	- __pull__ is the action of requesting a message from a channel.
 
-| Word       | Definition    | Details      |
-| ---------- | ------------- | ------------------- |
-| message    | Data to transfer asynchronously between two pieces of code. | JS object that complies to a specific structure. |
-| structure  | Class that defines a message type. | Object with well defined, XML-like properties |
-| channel    | Messages container. | Acts mainly (but not solely) as a FIFO queue. transports messages between handlers. Implements promise-like behaviour. |
-| handler    | Code that emits (and waits for) messages. | JS function. Sends messages to channels. Waits for messages from channels. |
+## Quick usage
 
-## Usage example
-
-Include on each module (Node.js):
+Include in modules of a Node.js application:
 ```js
 var cg = require('codegrid');
 ```
-Declare structures to handle specific purpose messages:
+A minimal usage:
 ```js
+// A simple structure
+cg.structure({
+	name:'plainString',
+    type:'string'
+});
+
+// A simple channel
+cg.channel({
+	name:'channelA',
+    structure: 'plainString',
+    onMessage: function(plainString) { //Called whenever there is an incoming message
+		console.log(plainString);	// ... or do some asynchronous work here
+		cg.emit('channelB',plainsString);	// Done, send a message to another channel
+    }
+});
+
+```
+Execute in series, use inside callbacks:
+```js
+// Merge some files
+cg.channel({	
+	name:'mergeFiles',
+    structure: 'plainString',
+    onMessage: function(plainString) { //Called whenever there is an incoming message
+		console.log(plainString);	// Perhaps do some asynchronous work here
+		cg.emit('channelB',plainsString);	// Done, send a message to another channel
+    }
+});
+
+// Mix with callbacks
+fs.readdir('*.pdf',function(err,files){
+	files.forEach(function(file){
+    
+		cg.emit('countFile');
+    });
+});
+
+```
+
+
+
+```js
+
+
 // User information
 cg.structure({
 	name: 'user.info',    // Sructure name
