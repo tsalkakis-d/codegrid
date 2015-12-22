@@ -296,7 +296,32 @@ cg.resume(channel);
 ###### Example 9
 ##### Parallel execution
 ```js
-// Execute A 2 times and B 3 times, then execute B
+// Execute A 2 times and B 3 times, then execute C
+
+var ch = cg.channel();
+
+function A() {
+	// ...
+    ch.message();
+}
+
+function B() {
+	// ...
+    ch.message();
+}
+
+function C() {
+	// ...
+}
+
+ch.onResume = C;
+ch.pause(5);
+A();
+B();
+A();
+B();
+B();
+ch.resume();
 
 ```
 
