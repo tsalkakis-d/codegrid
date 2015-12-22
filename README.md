@@ -1,108 +1,124 @@
 # codegrid
-An easy &amp; structured way to use events, streams and promises in Node AND browser, suitable expecially for large scale apps.
+Implement asynchronous programming in Node.js and browser Javascript, using event queues.
+An alternative to callbacks and promises, easy to read, easy to expand.
 ## Status
 Under construction!
 
 ## Introduction
 
-**codegrid** is a lightweight framework designed to simplify Javascript asynchronous programming, with emphasis on program readability. It can be used in both client (web browser) and server (node.js). It can even be mixed to send data from client to server and vice versa!
+**codegrid** is a lightweight framework designed to simplify Javascript asynchronous programming, both in web browser and server (node.js). It is very easy to learn and very easy to build large scale applications with. It can be used to synchronize data between code in the same module, code in different modules, code between a server and web browser or code between two servers.
 
-While promises implement asynchronous programming by giving emphasis on the application code, codegrid puts its weight on the application data. This gives codegrid a huge advantage when writing large scale applications, because the art of programming is more mature for creating large structures of data than creating large structures of code. 
-There is usually a limit in creating complex code. Passing this limit leads to applications that are very hard to maintain. However, when we try to create complex data, we do not have this problem as long as we follow two important principles: Repeat and define our data structures. Furthermore, task automation is a lot more easier when managing data than managing code.
+While promises implement asynchronous programming by giving emphasis on code, _codegrid_ attempts a different approach by moving the weight on data. This gives _codegrid_ an advantage when building large scale applications, because the art of programming is more mature for creating large quantities of data than creating large quantities of code. Increasing the code can lead quickly to applications that are very difficult to maintain. On the other side, increasing the data is a simpler process, as long as we follow two important principles: Define well and repeat often our data structures.
 
-## How it works
+Furthermore, task automation becomes easier when information is kept in data rather than in code.
+
 To understand how codegrid works, imagine that your application can be drawn in a two-dimensional diagram:
-- The horizontal axis in this diagram is your code flow, while the vertical axis is your data flow. 
-- A sequence of code instructions (function) is drawn as a shape with a minimum height and a certain width. 
-- A sequence of data objects (channel) is drawn as a shape with a minimum width and a certain height. 
-- Arrows from functions to channels indicate the data messages that functions emit to the channels.
-- Arrows from channels to functions indicate the event handlers that fire on channel events.
+- The horizontal axis of the diagram is the code flow, while the vertical axis is the data flow. 
+- A sequence of code instructions is drawn as a horizontal narrow rectangle: Code inside the sequence executes from left to right.
+- A queue of data objects is drawn as a vertical narrow rectangle: Data items are received on the queue top and they are consumed sequentially on the queue bottom.
+- Arrows from codes to queues indicate the points where functions send data to the queues.
+- Arrows from queues to codes indicate the event handlers that fire on queue events.
 
 ## Definitions
-- __channel__  A FIFO buffer.
-A channel receives messages, stores them in the FIFO buffer and processes them. 
-Process may involve firing an event handler, firing an error or pausing temporarily until a resule message arrives.
-- __handler__ 
-A function that fires when a specific condition occurs in a channel.
-Possible handlers are:
-	- __receive handler__ Fires when a message is received
-	- __error handler__ Fires when an error occurs inside a handler or an error message is received
-	- __pause handler__ Fires when a pause message is received
-	- __resume handler__ Fires when a resume message is received
-- __message__ 
+- __channel__  A FIFO data buffer.
+A channel receives data messages, stores them in a FIFO buffer and then fires an event handler to consume them.
+- __data message__ 
 A data object with a specific structure. 
-Messages are sent from code to channels. When they arrive, they fire event handlers.
-They may be application messages (with user defined structure)
+Messages are sent from code to channels, where they are consumed.
+All data messages that arrive to a channel must have the same structure.
+- __channel state__
+A channel can be in one of the following operation states: 
+	- __normal state__ Messages are consumed as soon as possible.
+	- __paused state__ Messages are stored to be consumed later.
+- __control message__
+Channels switch their state when they receive one of the following control messages:
+	- __pause__  Channel enters the paused state. Consuming is stopped.
+	- __resume__ Channel returns to the normal state. All pending messages are consumed.
+	- __flush__ Channel returns to the normal state. All pending messages are flushed without consuming.
+- __handler__ 
+A function that fires when a specific condition occurs in a channel:
+	- __consume handler__ Fires to consume a data message and remove it from the queue
+	- __error handler__ Fires when an error occurs inside a handler
+	- __pause handler__ Fires when a pause control message is received
+	- __resume handler__ Fires when a resume control message is received
 - __scope__  
-A special data container for channel local variables. These local variables are available to the channel handlers
- 
-A message handler may process the incoming message and place some data here.  
-	- __handler__ The function that fires when a specific event -usually message arrival- occurs in a channel.
-	- __consume__ The action of calling the handler for incoming messages of a channel.
-	- __emit__  The action of sending a message to a channel. Message will be consumed immediately.
-	- __push__  The action of sending a message to a channel. Message will be stored and will not be consumed immediately.
-	- __pop__ The action of 
-- __structure__ A set or XML-like rules defining the properties of a message object.
-	- __onMessage__ is a channel function that executes when a message arrives.
-	- __pull__ is the action of requesting a message from a channel.
+A special data container for channel local variables. These local variables are available to the channel handlers.
+A message handler may process the incoming message and place some data here.
 
 ## Usage examples
 
-Including in a Node.js module:
+Include _codegrid_ in a Node.js module:
 ```js
 var cg = require('codegrid');
 ```
 
-Performing a simple callback without arguments:
+Perform a simple callback without arguments:
 ```js
-// A executes first, then B executes. 
+// A executes first, then B executes
 
 function A() {
-	// ... do a time consuming task ...
+	// ... 
     cg.emit(channel);	// Send message to channel when task is finished
 }
 
 var channel = cg.channel({	// Create an anonymous channel
-	onMessage: function B(){ // Fired when a message is received in channel
-    	// ... do another task ...
+	onMessage: function B(){ // Fired to consume a message in channel
+    	// ... 
     }
 });
 ```
 
-Two functions share the same callback:
+Two functions use the same callback function:
 ```js
-// B executes after each execution of A1 or A2
+// B executes after either execution of A1 or A2
 
 function A1() { 
-	// ... do a time consuming task ...
+	// ... 
 	cg.emit('channel1');
 }
 
 function A2() { 
-	// ... do a time consuming task ...
+	// ... 
 	cg.emit('channel1');
 }
 
 cg.channel({	// Create a named channel
 	name: 'channel1',
 	onMessage: function B(){
-    	// ... do another task ...
+    	// ... 
     }
 });
 ```
 
-Passing a complex object from an asynchronous function to another function:
+Callback passing a plain string:
 ```js
-// A executes first and sends a complex object to channel, 
-// then channel validates the object and calls B passing the object
+// A executes first, then passes a string to B, then B executes
+
+function A() {
+	// ... 
+    cg.emit(channel,'done');
+}
+
+var channel = cg.channel({	// Create an anonymous channel
+	structure: 'string',
+	onMessage: function B(s) {
+    	console.log(s);
+    }
+});
+```
+
+Callback passing a complex object:
+```js
+// A executes first, then sends an object to channel, 
+// then channel validates the object, then B consumes the object
 
 function A() {
 	// ... Read a person from database to person ...
     person.source = 'database';
-    cg.emit(persons,person);	// Send person to channel. It's ok if channel does not exist yet
+    cg.emit(persons,person);	// Send person to B
 }
-var persons = cg.channel({	// Create an anonymous channel for persons
-	structure: {	// Person properties:
+var persons = cg.channel({	// Create an anonymous channel for consuming persons
+	structure: {	// Define properties of data message:
     	id: 'integer',	// Person ID
         name: {type:'string',min:2,max:50},	// Person name (2...50 characters)
         age: {type:'integer',min:12,optional:true}, // Optional person age (12...)
@@ -151,80 +167,78 @@ cg.channel({name:'B-to-C', onMessage: C});
 cg.channel({name:'C-to-D', onMessage: D});
 
 function A() {
-	... Do A...	
+	// ...
 	cg.emit('A-to-B');
 }
 
 function B() {
-	... Do B...	
+	// ...
 	cg.emit('B-to-C');
 }
 
 function C() {
-	... Do C...	
+	// ...
 	cg.emit('C-to-D');
 }
 
 function D() {
-	... Do D...	
+	// ...
 }
 
-// Converting the above functions to promises would need a significant amount of effort
+// Converting the above functions to promises would surely need more effort
 ```
 
 Serial execution #1 (collect and process data, then output result):
 ```js
-// Add numbers from 1 to 100
+// Add numbers from 1 to 100, show the result
 
-var channel = cg.channel({
-	structure:'integer',
-    scope: {
-    	sum:0
+var channel = cg.channel({ 	// Channel to perform the addition
+	structure:'integer',	// Data messages will be integers
+    scope: {sum:0},			// Calculate sum here
+    onMessage: function (n,scope) { // Executes when a message is received
+    	scope.sum += n;
     },
-    onMessage: function (n) { // Executes when a message is received
-    	this.scope.sum += n;
-    },
-    onResume: function() {
-    	console.log(sum);
+    onResume: function(scope) {
+    	console.log(scope.sum);
     },
 });
 
-// Collect data
+// Add numbers
 for (var i=0;i<100;i++) {
 	cg.emit(channel,i);
 }
 
-// Execute onResume()
+// Show result
 cg.resume(channel);	
 ```
 
 Serial execution #2 (collect data, then process data, then output result):
 ```js
-// Add numbers from 1 to 100
+// Add numbers from 1 to 50, show the result
 
-var channel = cg.channel({
-	structure:'integer',
-    scope: {sum:null},
-    onMessage: function (n) { // Executes for each message when all messages are popped
-    	this.scope.sum += n;
+var channel = cg.channel({ // Channel to perform the addition
+	structure:'integer',	// Data messages will be integers
+    scope: {sum:null},  // We can init scope later
+    onMessage: function (n,scope) { // Consume each data message (after resuming)
+    	scope.sum += n;
     },
-    onResume: function() {
-    	console.log(sum);
+    onPause: function(scope) { // Executes when pausing
+    	scope.sum = 0;
+    },
+    onResume: function(scope) { // Executes when resuming
+    	console.log(scope.sum);
     },
 });
 
-// Place channel in pause state. Messages are received and stored, but they are not processed
+// Pause channel. Numbers are stored, but they are not added yet
 cg.pause(channel);
 
-// Collect data
-for (var i=0;i<100;i++) {
+// Collect numbers
+for (var i=0;i<50;i++) {
 	cg.push(channel,i);
 }
 
-// Prepare to execute onMessage()
-cg.scope(channel).sum = 0;
-
-// Execute onMessage() for all messages, then execute onResume()
+// Resume channel. Numbers are added, then sum is displayed
 cg.resume(channel);
 ```
 
@@ -271,5 +285,65 @@ fs.readdir('*.pdf',function(err,files){
 
 ```
 
-
 ## API
+<table>
+	<tr>
+		<th>Object</th>
+		<th>Method</th>
+		<th colspan="2">Arguments</th>
+		<th>Description</th>
+		<th>Returns</th>
+	</tr>
+    <tr>
+    	<td colspan="6">require('codegrid')</td>
+    </tr>
+    <tr>
+    	<td rowspan="8"></td>
+    	<td rowspan="8">channel([options])</td>
+    	<td colspan="2">__options__ Object with properties:</td>
+    	<td rowspan="8">Creates a new channel</td>
+    	<td rowspan="8">A channel object.</td>
+    </tr>
+    <tr>
+    	<td></td>
+    	<td>[__name__] 
+        A unique string identifier for the new channel.
+        If a channel with that name exists, an error occurs.
+        If omitted, a unique name is generated.
+        </td>
+    </tr>
+    <tr>
+    	<td></td>
+    	<td>[__structure__] 
+        Defines the data structure (see Structure object).
+        If omitted, data messages must be empty.
+        </td>
+    </tr>
+    <tr>
+    	<td></td>
+    	<td>[__scope__] 
+        </td>
+    </tr>
+    <tr>
+    	<td></td>
+    	<td>[__onMessage__] 
+        </td>
+    </tr>
+    <tr>
+    	<td></td>
+    	<td>[__onError__] 
+        </td>
+    </tr>
+    <tr>
+    	<td></td>
+    	<td>[__onPause__] 
+        </td>
+    </tr>
+    <tr>
+    	<td></td>
+    	<td>[__onResume__] 
+        </td>
+    </tr>
+    
+</table>
+
