@@ -8,51 +8,40 @@ Please contact the author if you have any suggestions or if you feel that you ca
 ## Table of Contents
 
 *	[Introduction](#introduction)
-
 *   [Definitions](#definitions)
-	* channel
-	* data message
-	* channel state
-	* control message
-	* handler
-	* scope
-
-
 *   [Examples](#examples)
-	* Include _codegrid_ in a Node.js module
-	* Recursively read folder contents
-	* Perform a simple callback without arguments
-	* Two functions that call the same callback function
-	* Two functions that call the same callback function
-	* Callback passing a plain string
-	* Callback passing a complex object
-	* Replacing a callback hell
-	* Serial execution #1 (collect and process data, then output result)
-	* Serial execution #2 (collect data, then process data, then output result)
-	* Parallel execution
-	* Recursively read folder contents
+	* [Example 1](#example1) Include _codegrid_ in a Node.js module
+	* [Example 2](#example2) Perform a simple callback without arguments
+	* [Example 3](#example3) Two functions that call the same callback function
+	* [Example 4](#example4) Callback passing a plain string
+	* [Example 5](#example5) Callback passing a complex object
+	* [Example 6](#example6) Replacing a callback hell
+	* [Example 7](#example7) Serial execution #1 (collect and process data, then output result)
+	* [Example 8](#example8) Serial execution #2 (collect data, then process data, then output result)
+	* [Example 9](#example9) Parallel execution
+	* [Example 10](#example10) Recursively read folder contents
 *   [API](#api)
-	* Object returned by require('codegrid')
-		* .channel([options])
-		* .message(channel[,message])
-		* .messages(channel,messages)
-		* .pause([channel[,count]])
-		* .resume([channel])
-	* Structure object required in channel()
-		* [type]
-		* [structure]
-		* [optional]
-		* [min]
-		* [max]
-	* Channel object returned by channel()
-		* .message([,message])
-		* .messages([,messages])
-		* .pause([count])
-		* .resume() 
-		* .onConsume(function) 
-		* .onError(function) 
-		* .onPause(function) 
-		* .onResume(function) 
+	* `Object` Object returned by require('codegrid')
+		*  `Property` channel([options])
+		*  `Property` message(channel[,message])
+		*  `Property` messages(channel,messages)
+		*  `Property` pause([channel[,count]])
+		*  `Property` resume([channel])
+	* `Object` Structure object required in channel()
+		*  `Property` [type]
+		*  `Property` [structure]
+		*  `Property` [optional]
+		*  `Property` [min]
+		*  `Property` [max]
+	* `Object` Channel object returned by channel()
+		*  `Property` message([,message])
+		*  `Property` messages([,messages])
+		*  `Property` pause([count])
+		*  `Property` resume() 
+		*  `Property` onConsume(function) 
+		*  `Property` onError(function) 
+		*  `Property` onPause(function) 
+		*  `Property` onResume(function) 
 
 
 
@@ -87,24 +76,25 @@ Channels switch their state when they receive one of the following control messa
 	- __pause__  Channel enters the paused state. Consuming is stopped.
 	- __resume__ Channel returns to the normal state. All pending data messages are consumed.
 	- __flush__ Channel returns to the normal state. All pending data messages are flushed without consuming.
-- __handler__ 
+- __event handler__ 
 A function that fires when a specific condition occurs in a channel:
 	- __message handler__ Fires to consume a data message and remove it from the queue
 	- __error handler__ Fires when an error occurs inside a handler
 	- __pause handler__ Fires when a pause control message is received
 	- __resume handler__ Fires when a resume control message is received
-- __scope__  
+- __channel scope__  
 A special data container in channel for storing local variables, accessible from handlers.
 A message handler may process the incoming messages and keep some data here.
 
 ## Examples
 
-
+###### Example 1
 ##### Include _codegrid_ in a Node.js module
 ```js
 var cg = require('codegrid');
 ```
 
+###### Example 2
 ##### Perform a simple callback without arguments
 ```js
 // A executes first, then B executes
@@ -121,6 +111,7 @@ var channel = cg.channel({	// Create an anonymous channel
 });
 ```
 
+###### Example 3
 ##### Two functions that call the same callback function
 ```js
 // Callback B executes after either execution of A1 or A2
@@ -143,6 +134,7 @@ cg.channel({	// Create a named channel
 });
 ```
 
+###### Example 4
 ##### Callback passing a plain string
 ```js
 // A executes first, then passes a string to B, then B executes
@@ -160,6 +152,7 @@ var channel = cg.channel({	// Create an anonymous channel
 });
 ```
 
+###### Example 5
 ##### Callback passing a complex object
 ```js
 // A executes first, then sends an object to channel, 
@@ -211,6 +204,7 @@ var persons = cg.channel({	// Create an anonymous channel for consuming persons
 });
 ```
 
+###### Example 6
 ##### Replacing a callback hell
 ```js
 // A calls B, then B calls C, then C calls D
@@ -243,7 +237,8 @@ A();
 
 ```
 
-##### Serial execution #1 (collect and process data, then output result)
+###### Example 7
+##### Serial execution (collect and process data, then output result)
 ```js
 // Add numbers from 1 to 100, show the result
 
@@ -267,7 +262,8 @@ for (var i=0;i<100;i++) {
 cg.resume(channel);	
 ```
 
-##### Serial execution #2 (collect data, then process data, then output result)
+###### Example 8
+##### Serial execution (collect data, then process data, then output result)
 ```js
 // Add numbers from 1 to 50, show the result
 
@@ -297,12 +293,14 @@ for (var i=0;i<50;i++) {
 cg.resume(channel);
 ```
 
+###### Example 9
 ##### Parallel execution
 ```js
 // Execute A 2 times and B 3 times, then execute B
 
 ```
 
+###### Example 10
 ##### Recursively read folder contents
 ```js
 cg.channel({	
@@ -340,157 +338,148 @@ fs.readdir('*.pdf',function(err,files){
 ```
 
 ## API
-Objects:
-[require]:
--  __Object returned by require('codegrid')__
-	- __Properties__
+- `Object` __Object returned by require('codegrid')__
+	- `Property` __channel__([options])
+		- __Purpose__
+		Create a new channel or return an existing one
+		- __Usage__
+			- channel(options) creates a new channel.
+			- channel(name) returns the existing channel with that name.
+        - `Argument` [__options__]
+        An optional argument to determine the channel properties
+        If omitted, an anonymous channel will be created that receives empty data messages
+        If options is a string, an already existing channel with this name will be returned (or null if no such channel exists).
+        If options is an object, it may contain the following properties that define the channel behaviour:
+        	- `Property` [__name__]
+			A unique string identifier for the new channel.
+		    If a channel with that name exists, an error will occur.
+		    If omitted (anonymous channel), a unique name will be generated.
+			- `Property` [__structure__]
+	        Defines the structure of the data messages handled by this channel.
+            If object, see Structure object below for available properties.
+		    If string, data message must be a single variable of this type. See property .type of Structure object for available types.
+			- `Property` [__scope__]
+		    Object whose properties will be variables local to the channel and accesible by its event handlers.
+            If omitted, an empty scope {} will be created.
+            If present, scope will be initialized with this value.
+	    	- `Property` [__onConsume__([message[,scope]])]
+	        onConsume() is fired to consume a message.
+            If omitted, no consuming will be performed and messages are silently discarded.
+			- `Property` [__onError__([error[,scope]])]
+		    onError() is fired when an error occurs.
+            If omitted and an error occurs, an exception is thrown.
+	        - `Property` [__onPause__([scope])]
+	        onPause() is fired when channel enters in paused state.
+	    	- `Property` [__onResume__([scope])]
+		    onResume() is fired when channel leaves paused state and all pending messages have been consumed.
+	        If sending a resume control message while in normal state, the channel will consume any previous data messages and then will fire onResume().
+		- __Returns__
+		A channel object.
+        If an error occured in channel creation, channel.error holds the error details.
 
-		- __.channel__([options])
-			- __Purpose__
-			Creates a new channel
-			- __Usage__
-			Call .channel(options) to create a new channel.
-			- __Arguments__
-            	- [__options__]
-            	An optional argument to determine the channel properties
-            	If omitted, an anonymous channel will be created that receives empty data messages
-                If options is a string, an already existing channel with this name will be returned (or null if no such channel exists).
-            	If options is an object, it may contain the following properties that define the channel behaviour:
-	        		- [__name__]
-					A unique string identifier for the new channel.
-			      	If a channel with that name exists, an error will occur.
-			        If omitted (anonymous channel), a unique name will be generated.
-					- [__structure__]
-		        	Defines the structure of the data messages handled by this channel.
-                    If object, see Structure object below for available properties.
-			        If string, data message must be a single variable of this type. See property .type of Structure object for available types.
-					- [__scope__]
-			        Object whose properties will be variables local to the channel and accesible by its event handlers.
-                    If omitted, an empty scope {} will be created.
-                    If present, scope will be initialized with this value.
-		    		- [__onConsume__]
-		        	function([message[,scope]]) is fired when a message is ready to be consumed and consumes that message.
-					- [__onError__]
-			        function([error[,scope]]) is fired when an error occurs.
-		        	- [__onPause__]
-		        	function([scope]) is fired when channel enters in paused state.
-		    		- [__onResume__]
-			        function([scope]) is fired when channel leaves paused state and all pending messages have been consumed.
-		        	If sending a resume control message while in normal state, the channel will consume any previous data messages and then will fire the onResume handler immediately.
-			- __Returns__
-			A channel object.
-            If an error occured in channel creation, channel.error holds the error details.
+	- `Property` __message__(channel[,message])
+		- __Purpose__
+		Sends a data message to a channel
+		- __Usage__
+			- message(channel) sends an empty data message to a channel. Channel should allow only empty data messages.
+			- message(channel,message) sends a data object to a channel. Data object must be valid according to the channel structure.
+        - `Argument` [__channel__]
+        The channel to send the data.
+        If string, it is the channel name.
+        If object, it is the channel object returned from .channel()
+        - `Argument` [__message__]
+        The data object to send to the channel.
+        When channel receives the message, it will perform validations to check if it complies to the declared structure for the objects handled by that channel.
 
-		- __.message__(channel[,message])
-			- __Purpose__
-			Sends a data message to a channel
-			- __Usage__
-				- .message(channel) sends an empty data message to a channel. Channel should allow only empty data messages.
-            	- .message(channel,message) sends a data object to a channel. Data object must be valid according to the channel structure.
-			- __Arguments__
-            	- [__channel__]
-            	The channel to send the data.
-                If string, it is the channel name.
-                If object, it is the channel object returned from .channel()
-            	- [__message__]
-            	The data object to send to the channel.
-                When channel receives the message, it will perform validations to check if it complies to the declared structure for the objects handled by that channel.
+	- `Property` __messages__(channel,messages)
+		- __Purpose__
+		Sends an array of data messages to a channel
+		- __Usage__
+			- messages(channel,n) sends n empty data message to a channel, where n is an integer. 
+			- messages(channel,arr) sends some data messages to a channel, where arr is an array containing data messages.
+        - `Argument` [__channel__]
+        The channel to send the data.
+        If string, it is the channel name.
+        If object, it is the channel object returned from .channel()
+        - `Argument` [__messages__]
+        If messages is a number, it is the number of empty data messages to send.
+        If messages is an array, it contains the data messages to send.
 
-		- __.messages__(channel,messages)
-			- __Purpose__
-			Sends an array of data messages to a channel
-			- __Usage__
-				- .messages(channel,n) sends n empty data message to a channel, where n is an integer. 
-            	- .messages(channel,arr) sends some data messages to a channel, where arr is the array containing the data messages.
-			- __Arguments__
-            	- [__channel__]
-            	The channel to send the data.
-                If string, it is the channel name.
-                If object, it is the channel object returned from .channel()
-            	- [__messages__]
-                If messages is a number, it is the number of empty data messages to send.
-                If messages is an array, it contains the data messages to send.
+	- `Property` __pause__([channel[,count]])
+		- __Purpose__
+		Sends a pause control message to set the channel in paused state.
+        Channel enters the paused state and onPause handler fires.
+        When in paused state, channel will receive and store messages but will not consume them.
+		- __Usage__
+			- pause(channel) sends a pause control message. Channel will resume to normal state after receiving a resume/flush control message.
+			- pause(channel,count) sends a pause control message to set channel in paused state for a predefined number of data messages. After receiving the predefined number of data messages, channel will resume automatically and return to the normal state, without requiring a resume control message.
+        - `Argument` [__channel__]
+        The channel to send the data.
+        If string, it is the channel name.
+        If object, it is the channel object returned from .channel()
+        - `Argument` [__count__]
+        The number of data messages to receive before resuming automatically.
+        If count is 0 or null, a resume control signal will be added immediately in the queue.
 
-		- __.pause__([channel[,count]])
-			- __Purpose__
-			Sends a pause control message to set the channel in paused state.
-            Channel enters the paused state and onPause handler fires.
-            When in paused state, channel will receive and store messages but will not consume them.
-			- __Usage__
-				- .pause(channel) sends a pause control message. Channel will resume to normal state after receiving a resume/flush control message.
-            	- .pause(channel,count) sends a pause control message to set channel in paused state for a predefined number of data messages. After receiving the predefined number of data messages, channel will resume automatically and return to the normal state, without requiring a resume control message.
-			- __Arguments__
-            	- [__channel__]
-            	The channel to send the data.
-                If string, it is the channel name.
-                If object, it is the channel object returned from .channel()
-            	- [__count__]
-            	The number of data messages to receive before resuming automatically.
-                If count is 0 or null, a resume control signal will be added immediately in the queue.
+	- `Property` __resume__([channel])
+        - __Purpose__
+        Sends a resume control message to set the channel in normal state. 
+        If there are any data messages pending, they are consumed in the order they were arrived.
+        The onResume handler fires then and the channel enters the normal state.
+        - __Usage__
+            - resume(channel) sends a resume control message.
+        - `Argument` [__channel__]
+        The channel to send the data.
+        If string, it is the channel name.
+        If object, it is the channel object returned from .channel()
 
-		- __.resume__([channel])
-			- __Purpose__
-			Sends a resume control message to set the channel in normal state. 
-            If there are any data messages pending, they are consumed in the order they were arrived.
-            The onResume handler fires then and the channel enters the normal state.
-			- __Usage__
-				- .resume(channel) sends a resume control message.
-			- __Arguments__
-            	- [__channel__]
-            	The channel to send the data.
-                If string, it is the channel name.
-                If object, it is the channel object returned from .channel()
-
-- __Structure object required in channel()__
-	- __Properties__
-		- __[type]__
-		String that indicates the data type. Available types are:
-        	- __string__ Data must be a string
-        	- __integer__ Data must be an integer
-        	- __number__ Data must be a number
-        	- __datetime__ Data must be a Datetime object
-        	- __boolean__ Data must be a boolean
-        	- __array__ Data must be an array. Structure of array items is determined by property _structure_
-        	- __object__ Data must be an object. Object properties are defined in property _structure_
-		- __[structure]__
-		Variable with different meanings, depending on type:
-        	- If type is __object__, structure is an object defining the available properties for data. 
-        	Property key is the name of the property in data.
-            Property value is a Structure object that defines the rules for the property value in data.
-        	- If type is __array__, structure is a Structure object that defines the rules for each array item in data.
-		- __[optional]__
-		If exists and it is true, then this value is optional.
-        If omitted, then this value is required.
-		- __[min]__
-		Variable with different meanings, depending on type:
-        	- If type is __string__, min is an integer defining the minimum acceptable number of characters in data
-        	- If type is __integer__, min is an integer defining the minimum acceptable value of data
-        	- If type is __number__, min is a number defining the minimum acceptable value of data
-        	- If type is __datetime__, min is a datetime defining the minimum acceptable value of data
-        	- If type is __array__, min is an integer defining the minimum acceptable length of the array items
-		- __[max]__
-		Variable with different meanings, depending on type:
-        	- If type is __string__, max is an integer defining the maximum acceptable number of characters in data
-        	- If type is __integer__, max is an integer defining the maximum acceptable value of data
-        	- If type is __number__, max is a number defining the maximum acceptable value of data
-        	- If type is __datetime__, max is a datetime defining the maximum acceptable value of data
-        	- If type is __array__, max is an integer defining the maximum acceptable length of the array items
+- `Object` __Structure object required in channel()__
+    - `Property` __[type]__
+    String that indicates the data type. Available types are:
+        - __string__ Data must be a string
+        - __integer__ Data must be an integer
+        - __number__ Data must be a number
+        - __datetime__ Data must be a Datetime object
+        - __boolean__ Data must be a boolean
+        - __array__ Data must be an array. Structure of array items is determined by property _structure_
+        - __object__ Data must be an object. Object properties are defined in property _structure_
+    - `Property` __[structure]__
+    Variable with different meanings, depending on type:
+        - If type is __object__, structure is an object defining the available properties for data. 
+        Property key is the name of the property in data.
+        Property value is a Structure object that defines the rules for the property value in data.
+        - If type is __array__, structure is a Structure object that defines the rules for each array item in data.
+    - `Property` __[optional]__
+    If exists and it is true, then this value is optional.
+    If omitted, then this value is required.
+    - `Property` __[min]__
+    Variable with different meanings, depending on type:
+        - If type is __string__, min is an integer defining the minimum acceptable number of characters in data
+        - If type is __integer__, min is an integer defining the minimum acceptable value of data
+        - If type is __number__, min is a number defining the minimum acceptable value of data
+        - If type is __datetime__, min is a datetime defining the minimum acceptable value of data
+        - If type is __array__, min is an integer defining the minimum acceptable length of the array items
+    - `Property` __[max]__
+    Variable with different meanings, depending on type:
+        - If type is __string__, max is an integer defining the maximum acceptable number of characters in data
+        - If type is __integer__, max is an integer defining the maximum acceptable value of data
+        - If type is __number__, max is a number defining the maximum acceptable value of data
+        - If type is __datetime__, max is a datetime defining the maximum acceptable value of data
+        - If type is __array__, max is an integer defining the maximum acceptable length of the array items
        	
-- __Channel object returned by channel()__
-	- __Properties__
-
-		- __.message__([,message])
-		- __.messages__([,messages])
-		- __.pause__([count])
-		- __.resume__() 
-        The above functions are equvalent to the corresponding library functions. 
-        The only difference is that the channel argument is not required.
-		- __.onConsume__(function) 
-        Define the consume event handler
-		- __.onError__(function) 
-        Define the error event handler
-		- __.onPause__(function) 
-        Define the pause event handler
-		- __.onResume__(function) 
-        Define the resume event handler
+- `Object` __Channel object returned by channel()__
+    - `Property` [__message__([,message])]
+    - `Property` [__messages__([,messages])]
+    - `Property` [__pause__([count])]
+    - `Property` [__resume__()]
+    The above functions are equvalent to the corresponding library functions. 
+    The only difference is that the channel argument is not required.
+    - `Property` [__onConsume__(function)]
+    Define the consume event handler
+    - `Property` [__onError__(function)]
+    Define the error event handler
+    - `Property` [__onPause__(function)]
+    Define the pause event handler
+    - `Property` [__onResume__(function)]
+    Define the resume event handler
 
