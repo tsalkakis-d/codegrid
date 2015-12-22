@@ -6,13 +6,13 @@ Under construction!
 
 ## Introduction
 
-**codegrid** is a lightweight framework designed to simplify Javascript asynchronous programming, both in web browser and server (node.js). It is very easy to learn and very easy to build large scale applications with. It can be used to synchronize data between code in the same module, code in different modules, code between a server and web browser or code between two servers.
+**codegrid** is a lightweight framework designed to simplify Javascript asynchronous programming, both in web browser and server (node.js). It is very easy to learn and very easy to build large scale applications with. It can be used to synchronize data between code in the same module, in different modules, between a server and web browser or between two servers.
 
 While promises implement asynchronous programming by giving emphasis on code, _codegrid_ attempts a different approach by moving the weight on data. This gives _codegrid_ an advantage when building large scale applications, because the art of programming is more mature for creating large quantities of data than creating large quantities of code. Increasing the code can lead quickly to applications that are very difficult to maintain. On the other side, increasing the data is a simpler process, as long as we follow two important principles: Define well and repeat often our data structures.
 
-Furthermore, task automation becomes easier when information is kept in data rather than in code.
+Also, task automation becomes easier when information is kept in data rather than in code.
 
-To understand how codegrid works, imagine that your application can be drawn in a two-dimensional diagram:
+To understand how codegrid works, imagine that an application can be drawn in a two-dimensional diagram:
 - The horizontal axis of the diagram is the code flow, while the vertical axis is the data flow. 
 - A sequence of code instructions is drawn as a horizontal narrow rectangle: Code inside the sequence executes from left to right.
 - A queue of data objects is drawn as a vertical narrow rectangle: Data items are received on the queue top and they are consumed sequentially on the queue bottom.
@@ -20,7 +20,7 @@ To understand how codegrid works, imagine that your application can be drawn in 
 - Arrows from queues to codes indicate the event handlers that fire on queue events.
 
 ## Definitions
-- __channel__  A FIFO data buffer.
+- __channel__  A data buffer with event handlers.
 A channel receives data messages, stores them in a FIFO buffer and then fires an event handler to consume them.
 - __data message__ 
 A data object with a specific structure. 
@@ -28,22 +28,22 @@ Messages are sent from code to channels, where they are consumed.
 All data messages that arrive to a channel must have the same structure.
 - __channel state__
 A channel can be in one of the following operation states: 
-	- __normal state__ Messages are consumed as soon as possible.
-	- __paused state__ Messages are stored to be consumed later.
+	- __normal state__ Data messages are consumed as soon as possible.
+	- __paused state__ Data messages are stored to be consumed later.
 - __control message__
 Channels switch their state when they receive one of the following control messages:
 	- __pause__  Channel enters the paused state. Consuming is stopped.
-	- __resume__ Channel returns to the normal state. All pending messages are consumed.
-	- __flush__ Channel returns to the normal state. All pending messages are flushed without consuming.
+	- __resume__ Channel returns to the normal state. All pending data messages are consumed.
+	- __flush__ Channel returns to the normal state. All pending data messages are flushed without consuming.
 - __handler__ 
 A function that fires when a specific condition occurs in a channel:
-	- __consume handler__ Fires to consume a data message and remove it from the queue
+	- __message handler__ Fires to consume a data message and remove it from the queue
 	- __error handler__ Fires when an error occurs inside a handler
 	- __pause handler__ Fires when a pause control message is received
 	- __resume handler__ Fires when a resume control message is received
 - __scope__  
-A special data container for channel local variables. These local variables are available to the channel handlers.
-A message handler may process the incoming message and place some data here.
+A special data container in channel for storing local variables, accessible from handlers.
+A message handler may process the incoming messages and keep some data here.
 
 ## Usage examples
 
@@ -58,19 +58,19 @@ Perform a simple callback without arguments:
 
 function A() {
 	// ... 
-    cg.emit(channel);	// Send message to channel when task is finished
+    cg.emit(channel);	// Send message to channel when A is finished
 }
 
 var channel = cg.channel({	// Create an anonymous channel
-	onMessage: function B(){ // Fired to consume a message in channel
+	onMessage: function B(){ // Fired to consume a received message
     	// ... 
     }
 });
 ```
 
-Two functions use the same callback function:
+Two functions that call the same callback function:
 ```js
-// B executes after either execution of A1 or A2
+// Callback B executes after either execution of A1 or A2
 
 function A1() { 
 	// ... 
@@ -113,8 +113,8 @@ Callback passing a complex object:
 // then channel validates the object, then B consumes the object
 
 function A() {
-	// ... Read a person from database to person ...
-    person.source = 'database';
+	// ... Read a person from database to ...
+    person.source = 'database'; // Add some more info to person
     cg.emit(persons,person);	// Send person to B
 }
 var persons = cg.channel({	// Create an anonymous channel for consuming persons
@@ -122,7 +122,7 @@ var persons = cg.channel({	// Create an anonymous channel for consuming persons
     	id: 'integer',	// Person ID
         name: {type:'string',min:2,max:50},	// Person name (2...50 characters)
         age: {type:'integer',min:12,optional:true}, // Optional person age (12...)
-        source: 'string',							/// Information source
+        source: 'string',	// Information about where the person came from
         address: {	// Person address 
         	type: 'object',			// address is an object...
             structure: {			//  ...with the following properties:
@@ -162,23 +162,23 @@ Replacing a callback hell:
 ```js
 // A calls B, then B calls C, then C calls D
 
-cg.channel({name:'A-to-B', onMessage: B});
-cg.channel({name:'B-to-C', onMessage: C});
-cg.channel({name:'C-to-D', onMessage: D});
+cg.channel({name:'A-B', onMessage: B});
+cg.channel({name:'B-C', onMessage: C});
+cg.channel({name:'C-D', onMessage: D});
 
 function A() {
 	// ...
-	cg.emit('A-to-B');
+	cg.emit('A-B');
 }
 
 function B() {
 	// ...
-	cg.emit('B-to-C');
+	cg.emit('B-C');
 }
 
 function C() {
 	// ...
-	cg.emit('C-to-D');
+	cg.emit('C-D');
 }
 
 function D() {
