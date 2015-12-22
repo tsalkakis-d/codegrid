@@ -21,7 +21,7 @@ Please contact the author if you have any suggestions or if you feel that you ca
 	* [Example 9](#example-9) Parallel execution
 	* [Example 10](#example-10) Recursively read folder contents
 *   [API](#api)
-	* `Object` Object returned by require('codegrid')
+	* `Object` Library object returned by require('codegrid')
 		*  `Property` channel([options])
 		*  `Property` message(channel[,message])
 		*  `Property` messages(channel,messages)
@@ -60,7 +60,7 @@ To understand how codegrid works, imagine that an application can be drawn in a 
 - Arrows from codes to queues indicate the points where functions send data to the queues.
 - Arrows from queues to codes indicate the event handlers that fire on queue events.
 
-![Diagram](diagrams/concept.svg)
+![Diagram](/diagrams/concept.svg?raw=true "Diagram")
 
 ## Definitions
 - __channel__  A data buffer with event handlers.
@@ -365,7 +365,7 @@ fs.readdir('*.pdf',function(err,files){
 ```
 
 ## API
-- `Object` __Object returned by require('codegrid')__
+- `Object` __Library object returned by require('codegrid')__
 	- `Property` __channel__([options])
 		- __Purpose__
 		Create a new channel or return an existing one
@@ -498,9 +498,8 @@ fs.readdir('*.pdf',function(err,files){
     - `Property` [__message__([,message])]
     - `Property` [__messages__([,messages])]
     - `Property` [__pause__([count])]
-    - `Property` [__resume__()]
-    The above functions are equvalent to the corresponding library functions. 
-    The only difference is that the channel argument is not required.
+    - `Property` [__resume__()]<br>The above functions are similar to the library object functions. 
+    The only difference is that the channel argument is missing, since the property object is the channel object.
     - `Property` [__onConsume__(function)]
     Define the consume event handler
     - `Property` [__onError__(function)]
