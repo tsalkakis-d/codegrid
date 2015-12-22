@@ -1,8 +1,10 @@
 # codegrid
-Implement asynchronous programming in Node.js and browser Javascript, using event queues.
+Implement messages and asynchronous programming in Node.js and browser Javascript.
 An alternative to callbacks and promises, easy to read, easy to expand.
 ## Status
-Under construction!
+__Under construction!__ 
+Do not use in production, it will not work yet.
+Please contact the author if you have any suggestions or if you feel that you can contribute.
 
 ## Introduction
 
@@ -286,70 +288,118 @@ fs.readdir('*.pdf',function(err,files){
 ```
 
 ## API
-<table>
-	<tr>
-		<th>Object</th>
-		<th>Method</th>
-		<th colspan="2">Arguments</th>
-		<th>Description</th>
-		<th>Returns</th>
-	</tr>
-    <tr>
-    	<td colspan="6">require('codegrid')</td>
-    </tr>
-    <tr>
-    	<td rowspan="8"></td>
-    	<td rowspan="8">channel([options])</td>
-    	<td colspan="2"><b>options</b>: Object with properties:</td>
-    	<td rowspan="8">Creates a new channel</td>
-    	<td rowspan="8">A channel object.</td>
-    </tr>
-    <tr>
-    	<td></td>
-    	<td><b>name</b> (optional):
-        A unique string identifier for the new channel.
-        If a channel with that name exists, an error occurs.
-        If omitted, a unique name is generated.
-        </td>
-    </tr>
-    <tr>
-    	<td></td>
-    	<td><b>structure</b> (optional):
-        Defines the data structure (see Structure object).
-        If omitted, data messages must be empty.
-        </td>
-    </tr>
-    <tr>
-    	<td></td>
-    	<td><b>scope</b> (optional): 
-        Object whose properties are variables local to the channel and accesible by its event handlers.
-        </td>
-    </tr>
-    <tr>
-    	<td></td>
-    	<td><b>onMessage</b> (optional):
-        function([message[,scope]]) that consumes a message.
-        </td>
-    </tr>
-    <tr>
-    	<td></td>
-    	<td><b>onError</b> (optional):
-        function([error[,scope]]) that is called when an error occurs.
-        </td>
-    </tr>
-    <tr>
-    	<td></td>
-    	<td><b>onPause</b> (optional):
-        function([scope]) that is called when channel enters in paused state.
-        </td>
-    </tr>
-    <tr>
-    	<td></td>
-    	<td><b>onResume</b> (optional):
-        function([scope]) that is called when channel leaves paused state and all pending messages have been consumed.
-        If sending a resume control message while in normal state, the channel will consume any previous data messages and then will fire the onResume handler immediately.
-        </td>
-    </tr>
-    
-</table>
+Objects:
+- ##Object returned by require('codegrid')
+	- ###__Properties__
+		- ####__.channel__([options])
+			- __Purpose__
+			Creates a new channel
+			- __Usage__
+			Call .channel(options) to create a new channel.
+			- __Arguments__
+            	- [__options__]
+            	An optional argument to determine the channel properties
+            	If omitted, an anonymous channel will be created that receives empty data messages
+            	If present, it is an object with properties:
+	        		- [__name__]
+					A unique string identifier for the new channel.
+			      	If a channel with that name exists, an error will occur.
+			        If omitted (anonymous channel), a unique name will be generated.
+					- [__structure__]
+		        	Defines the structure of the data messages handled by this channel.
+                    If object, see Structure object below for available properties.
+			        If string, data message must be a single variable of this type. See property .type of Structure object for available types.
+					- [__scope__]
+			        Object whose properties will be variables local to the channel and accesible by its event handlers.
+                    If omitted, an empty scope {} will be created.
+                    If present, scope will be initialized with this value.
+		    		- [__onMessage__]
+		        	function([message[,scope]]) is fired when a message is ready to be consumed and consumes that message.
+					- [__onError__]
+			        function([error[,scope]]) is fired when an error occurs.
+		        	- [__onPause__]
+		        	function([scope]) is fired when channel enters in paused state.
+		    		- [__onResume__]
+			        function([scope]) is fired when channel leaves paused state and all pending messages have been consumed.
+		        	If sending a resume control message while in normal state, the channel will consume any previous data messages and then will fire the onResume handler immediately.
+			- __Returns__
+			A channel object.
+            If an error occured in channel creation, channel.error holds the error details.
+		- ####__.emit__(channel[,message])
+			- __Purpose__
+			Sends a data message to a channel
+			- __Usage__
+				- .emit(channel) sends an empty data message to a channel. Channel should allow only empty data messages.
+            	- .emit(channel,message) sends a data object to a channel. Data object must be valid according to the channel structure.
+			- __Arguments__
+            	- [__channel__]
+            	The channel to send the data.
+                If string, it is the channel name.
+                If object, it is the channel object returned from .channel()
+            	- [__message__]
+            	The data object to send to the channel.
+                When channel receives the message, it will perform validations to check if it complies to the declared structure for the objects handled by that channel.
+		- ####__.pause__([channel[,count])
+			- __Purpose__
+			Sends a pause control message to set the channel in paused state.
+            Channel enters the paused state and onPause handler fires.
+            When in paused state, channel will receive and store messages but will not consume them.
+			- __Usage__
+				- .pause(channel) sends a pause control message. Channel will resume to normal state after receiving a resume/flush control message.
+            	- .pause(channel,count) sends a pause control message to set channel in paused state for a predefined number of data messages. After receiving the predefined number of data messages, channel will resume automatically and return to the normal state, without requiring a resume control message.
+			- __Arguments__
+            	- [__channel__]
+            	The channel to send the data.
+                If string, it is the channel name.
+                If object, it is the channel object returned from .channel()
+            	- [__count__]
+            	The number of data messages to receive before resuming automatically.
+                If count is 0 or null, a resume control signal will be added immediately in the queue.
+		- ####__.resume__([channel)
+			- __Purpose__
+			Sends a resume control message to set the channel in normal state. 
+            If there are any data messages pending, they are consumed in the order they were arrived.
+            The onResume handler fires then and the channel enters the normal state.
+			- __Usage__
+				- .resume(channel) sends a resume control message.
+			- __Arguments__
+            	- [__channel__]
+            	The channel to send the data.
+                If string, it is the channel name.
+                If object, it is the channel object returned from .channel()
+- ##Structure object
+	- ###__Properties__
+		- ####[type]
+		String that indicates the data type. Available types are:
+        	- __string__ Data must be a string
+        	- __integer__ Data must be an integer
+        	- __number__ Data must be a number
+        	- __datetime__ Data must be a Datetime object
+        	- __boolean__ Data must be a boolean
+        	- __array__ Data must be an array. Structure of array items is determined by property _structure_
+        	- __object__ Data must be an object. Object properties are defined in property _structure_
+		- ####[structure]
+		Variable with different meanings, depending on type:
+        	- If type is __object__, structure is an object defining the available properties for data. 
+        	Property key is the name of the property in data.
+            Property value is a Structure object that defines the rules for the property value in data.
+        	- If type is __array__, structure is a Structure object that defines the rules for each array item in data.
+		- ####[optional]
+		If exists and it is true, then this value is optional.
+        If omitted, then this value is required.
+		- ####[min]
+		Variable with different meanings, depending on type:
+        	- If type is __string__, min is an integer defining the minimum acceptable number of characters in data
+        	- If type is __integer__, min is an integer defining the minimum acceptable value of data
+        	- If type is __number__, min is a number defining the minimum acceptable value of data
+        	- If type is __datetime__, min is a datetime defining the minimum acceptable value of data
+        	- If type is __array__, min is an integer defining the minimum acceptable length of the array items
+		- ####[max]
+		Variable with different meanings, depending on type:
+        	- If type is __string__, max is an integer defining the maximum acceptable number of characters in data
+        	- If type is __integer__, max is an integer defining the maximum acceptable value of data
+        	- If type is __number__, max is a number defining the maximum acceptable value of data
+        	- If type is __datetime__, max is a datetime defining the maximum acceptable value of data
+        	- If type is __array__, max is an integer defining the maximum acceptable length of the array items
+       	
 
