@@ -60,7 +60,7 @@ To understand how codegrid works, imagine that an application can be drawn in a 
 - Arrows from codes to queues indicate the points where functions send data to the queues.
 - Arrows from queues to codes indicate the event handlers that fire on queue events.
 
-![Diagram](./../../diagrams/concept.svg "Diagram")
+![Diagram](diagrams/1.concept.svg "Diagram")
 
 ## Definitions
 - __channel__  A data buffer with event handlers.
