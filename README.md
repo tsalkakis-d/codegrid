@@ -1,10 +1,60 @@
 # codegrid
 Implement messages and asynchronous programming in Node.js and browser Javascript.
 An alternative to callbacks and promises, easy to read, easy to expand.
-## Status
-__Under construction!__ 
+##### Status Under construction!
 Do not use in production, it will not work yet.
 Please contact the author if you have any suggestions or if you feel that you can contribute.
+
+## Table of Contents
+
+*	[Introduction](#introduction)
+
+*   [Definitions](#definitions)
+	* channel
+	* data message
+	* channel state
+	* control message
+	* handler
+	* scope
+
+
+*   [Examples](#examples)
+	* Include _codegrid_ in a Node.js module
+	* Recursively read folder contents
+	* Perform a simple callback without arguments
+	* Two functions that call the same callback function
+	* Two functions that call the same callback function
+	* Callback passing a plain string
+	* Callback passing a complex object
+	* Replacing a callback hell
+	* Serial execution #1 (collect and process data, then output result)
+	* Serial execution #2 (collect data, then process data, then output result)
+	* Parallel execution
+	* Recursively read folder contents
+*   [API](#api)
+	* Object returned by require('codegrid')
+		* .channel([options])
+		* .message(channel[,message])
+		* .messages(channel,messages)
+		* .pause([channel[,count]])
+		* .resume([channel])
+	* Structure object required in channel()
+		* [type]
+		* [structure]
+		* [optional]
+		* [min]
+		* [max]
+	* Channel object returned by channel()
+		* .message([,message])
+		* .messages([,messages])
+		* .pause([count])
+		* .resume() 
+		* .onConsume(function) 
+		* .onError(function) 
+		* .onPause(function) 
+		* .onResume(function) 
+
+
 
 ## Introduction
 
@@ -47,14 +97,15 @@ A function that fires when a specific condition occurs in a channel:
 A special data container in channel for storing local variables, accessible from handlers.
 A message handler may process the incoming messages and keep some data here.
 
-## Usage examples
+## Examples
 
-Include _codegrid_ in a Node.js module:
+
+##### Include _codegrid_ in a Node.js module
 ```js
 var cg = require('codegrid');
 ```
 
-Perform a simple callback without arguments:
+##### Perform a simple callback without arguments
 ```js
 // A executes first, then B executes
 
@@ -70,7 +121,7 @@ var channel = cg.channel({	// Create an anonymous channel
 });
 ```
 
-Two functions that call the same callback function:
+##### Two functions that call the same callback function
 ```js
 // Callback B executes after either execution of A1 or A2
 
@@ -92,7 +143,7 @@ cg.channel({	// Create a named channel
 });
 ```
 
-Callback passing a plain string:
+##### Callback passing a plain string
 ```js
 // A executes first, then passes a string to B, then B executes
 
@@ -109,7 +160,7 @@ var channel = cg.channel({	// Create an anonymous channel
 });
 ```
 
-Callback passing a complex object:
+##### Callback passing a complex object
 ```js
 // A executes first, then sends an object to channel, 
 // then channel validates the object, then B consumes the object
@@ -160,7 +211,7 @@ var persons = cg.channel({	// Create an anonymous channel for consuming persons
 });
 ```
 
-Replacing a callback hell:
+##### Replacing a callback hell
 ```js
 // A calls B, then B calls C, then C calls D
 
@@ -192,7 +243,7 @@ A();
 
 ```
 
-Serial execution #1 (collect and process data, then output result):
+##### Serial execution #1 (collect and process data, then output result)
 ```js
 // Add numbers from 1 to 100, show the result
 
@@ -216,7 +267,7 @@ for (var i=0;i<100;i++) {
 cg.resume(channel);	
 ```
 
-Serial execution #2 (collect data, then process data, then output result):
+##### Serial execution #2 (collect data, then process data, then output result)
 ```js
 // Add numbers from 1 to 50, show the result
 
@@ -246,14 +297,13 @@ for (var i=0;i<50;i++) {
 cg.resume(channel);
 ```
 
-
-Parallel execution:
+##### Parallel execution
 ```js
 // Execute A 2 times and B 3 times, then execute B
 
 ```
 
-Recursively read folder contents:
+##### Recursively read folder contents
 ```js
 cg.channel({	
 	name:'folderContents',
@@ -291,7 +341,8 @@ fs.readdir('*.pdf',function(err,files){
 
 ## API
 Objects:
-- __Object returned by require('codegrid')__
+[require]:
+-  __Object returned by require('codegrid')__
 	- __Properties__
 
 		- __.channel__([options])
@@ -442,5 +493,4 @@ Objects:
         Define the pause event handler
 		- __.onResume__(function) 
         Define the resume event handler
-
 
