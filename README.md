@@ -290,7 +290,7 @@ fs.readdir('*.pdf',function(err,files){
 ## API
 Objects:
 - __Object returned by require('codegrid')__
-	- __++Properties++__
+	- ++__Properties__++
 		- __.channel__([options])
 			- __++Purpose++__
 			Creates a new channel
