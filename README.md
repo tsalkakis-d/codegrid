@@ -290,13 +290,13 @@ fs.readdir('*.pdf',function(err,files){
 ## API
 Objects:
 - __Object returned by require('codegrid')__
-	- __Properties__
+	- __++Properties++__
 		- __.channel__([options])
-			- __Purpose__
+			- __++Purpose++__
 			Creates a new channel
-			- __Usage__
+			- __++Usage++__
 			Call .channel(options) to create a new channel.
-			- __Arguments__
+			- __++Arguments++__
             	- [__options__]
             	An optional argument to determine the channel properties
             	If omitted, an anonymous channel will be created that receives empty data messages
@@ -322,16 +322,16 @@ Objects:
 		    		- [__onResume__]
 			        function([scope]) is fired when channel leaves paused state and all pending messages have been consumed.
 		        	If sending a resume control message while in normal state, the channel will consume any previous data messages and then will fire the onResume handler immediately.
-			- __Returns__
+			- __++Returns++__
 			A channel object.
             If an error occured in channel creation, channel.error holds the error details.
 		- __.emit__(channel[,message])
-			- __Purpose__
+			- __++Purpose++__
 			Sends a data message to a channel
-			- __Usage__
+			- __++Usage++__
 				- .emit(channel) sends an empty data message to a channel. Channel should allow only empty data messages.
             	- .emit(channel,message) sends a data object to a channel. Data object must be valid according to the channel structure.
-			- __Arguments__
+			- __++Arguments++__
             	- [__channel__]
             	The channel to send the data.
                 If string, it is the channel name.
@@ -340,14 +340,14 @@ Objects:
             	The data object to send to the channel.
                 When channel receives the message, it will perform validations to check if it complies to the declared structure for the objects handled by that channel.
 		- __.pause__([channel[,count])
-			- __Purpose__
+			- __++Purpose++__
 			Sends a pause control message to set the channel in paused state.
             Channel enters the paused state and onPause handler fires.
             When in paused state, channel will receive and store messages but will not consume them.
-			- __Usage__
+			- __++Usage++__
 				- .pause(channel) sends a pause control message. Channel will resume to normal state after receiving a resume/flush control message.
             	- .pause(channel,count) sends a pause control message to set channel in paused state for a predefined number of data messages. After receiving the predefined number of data messages, channel will resume automatically and return to the normal state, without requiring a resume control message.
-			- __Arguments__
+			- __++Arguments++__
             	- [__channel__]
             	The channel to send the data.
                 If string, it is the channel name.
@@ -356,19 +356,19 @@ Objects:
             	The number of data messages to receive before resuming automatically.
                 If count is 0 or null, a resume control signal will be added immediately in the queue.
 		- __.resume__([channel)
-			- __Purpose__
+			- __++Purpose++__
 			Sends a resume control message to set the channel in normal state. 
             If there are any data messages pending, they are consumed in the order they were arrived.
             The onResume handler fires then and the channel enters the normal state.
-			- __Usage__
+			- __++Usage++__
 				- .resume(channel) sends a resume control message.
-			- __Arguments__
+			- __++Arguments++__
             	- [__channel__]
             	The channel to send the data.
                 If string, it is the channel name.
                 If object, it is the channel object returned from .channel()
 - __Structure object__
-	- __Properties__
+	- __++Properties++__
 		- __[type]__
 		String that indicates the data type. Available types are:
         	- __string__ Data must be a string
