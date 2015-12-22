@@ -289,9 +289,9 @@ fs.readdir('*.pdf',function(err,files){
 
 ## API
 Objects:
-- ##Object returned by require('codegrid')
-	- ###__Properties__
-		- ####__.channel__([options])
+- __Object returned by require('codegrid')__
+	- __Properties__
+		- __.channel__([options])
 			- __Purpose__
 			Creates a new channel
 			- __Usage__
@@ -325,7 +325,7 @@ Objects:
 			- __Returns__
 			A channel object.
             If an error occured in channel creation, channel.error holds the error details.
-		- ####__.emit__(channel[,message])
+		- __.emit__(channel[,message])
 			- __Purpose__
 			Sends a data message to a channel
 			- __Usage__
@@ -339,7 +339,7 @@ Objects:
             	- [__message__]
             	The data object to send to the channel.
                 When channel receives the message, it will perform validations to check if it complies to the declared structure for the objects handled by that channel.
-		- ####__.pause__([channel[,count])
+		- __.pause__([channel[,count])
 			- __Purpose__
 			Sends a pause control message to set the channel in paused state.
             Channel enters the paused state and onPause handler fires.
@@ -355,7 +355,7 @@ Objects:
             	- [__count__]
             	The number of data messages to receive before resuming automatically.
                 If count is 0 or null, a resume control signal will be added immediately in the queue.
-		- ####__.resume__([channel)
+		- __.resume__([channel)
 			- __Purpose__
 			Sends a resume control message to set the channel in normal state. 
             If there are any data messages pending, they are consumed in the order they were arrived.
@@ -367,9 +367,9 @@ Objects:
             	The channel to send the data.
                 If string, it is the channel name.
                 If object, it is the channel object returned from .channel()
-- ##Structure object
-	- ###__Properties__
-		- ####[type]
+- __Structure object__
+	- __Properties__
+		- __[type]__
 		String that indicates the data type. Available types are:
         	- __string__ Data must be a string
         	- __integer__ Data must be an integer
@@ -378,23 +378,23 @@ Objects:
         	- __boolean__ Data must be a boolean
         	- __array__ Data must be an array. Structure of array items is determined by property _structure_
         	- __object__ Data must be an object. Object properties are defined in property _structure_
-		- ####[structure]
+		- __[structure]__
 		Variable with different meanings, depending on type:
         	- If type is __object__, structure is an object defining the available properties for data. 
         	Property key is the name of the property in data.
             Property value is a Structure object that defines the rules for the property value in data.
         	- If type is __array__, structure is a Structure object that defines the rules for each array item in data.
-		- ####[optional]
+		- __[optional]__
 		If exists and it is true, then this value is optional.
         If omitted, then this value is required.
-		- ####[min]
+		- __[min]__
 		Variable with different meanings, depending on type:
         	- If type is __string__, min is an integer defining the minimum acceptable number of characters in data
         	- If type is __integer__, min is an integer defining the minimum acceptable value of data
         	- If type is __number__, min is a number defining the minimum acceptable value of data
         	- If type is __datetime__, min is a datetime defining the minimum acceptable value of data
         	- If type is __array__, min is an integer defining the minimum acceptable length of the array items
-		- ####[max]
+		- __[max]__
 		Variable with different meanings, depending on type:
         	- If type is __string__, max is an integer defining the maximum acceptable number of characters in data
         	- If type is __integer__, max is an integer defining the maximum acceptable value of data
