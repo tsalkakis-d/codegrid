@@ -10,16 +10,16 @@ Please contact the author if you have any suggestions or if you feel that you ca
 *	[Introduction](#introduction)
 *   [Definitions](#definitions)
 *   [Examples](#examples)
-	* [Example 1](#example1) Include _codegrid_ in a Node.js module
-	* [Example 2](#example2) Perform a simple callback without arguments
-	* [Example 3](#example3) Two functions that call the same callback function
-	* [Example 4](#example4) Callback passing a plain string
-	* [Example 5](#example5) Callback passing a complex object
-	* [Example 6](#example6) Replacing a callback hell
-	* [Example 7](#example7) Serial execution #1 (collect and process data, then output result)
-	* [Example 8](#example8) Serial execution #2 (collect data, then process data, then output result)
-	* [Example 9](#example9) Parallel execution
-	* [Example 10](#example10) Recursively read folder contents
+	* [Example 1](#example-1) Include _codegrid_ in a Node.js module
+	* [Example 2](#example-2) Perform a simple callback without arguments
+	* [Example 3](#example-3) Two functions that call the same callback function
+	* [Example 4](#example-4) Callback passing a plain string
+	* [Example 5](#example-5) Callback passing a complex object
+	* [Example 6](#example-6) Replacing a callback hell
+	* [Example 7](#example-7) Serial execution #1 (collect and process data, then output result)
+	* [Example 8](#example-8) Serial execution #2 (collect data, then process data, then output result)
+	* [Example 9](#example-9) Parallel execution
+	* [Example 10](#example-10) Recursively read folder contents
 *   [API](#api)
 	* `Object` Object returned by require('codegrid')
 		*  `Property` channel([options])
