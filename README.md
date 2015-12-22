@@ -300,13 +300,13 @@ fs.readdir('*.pdf',function(err,files){
     <tr>
     	<td rowspan="8"></td>
     	<td rowspan="8">channel([options])</td>
-    	<td colspan="2">__options__ Object with properties:</td>
+    	<td colspan="2"><b>options</b>: Object with properties:</td>
     	<td rowspan="8">Creates a new channel</td>
     	<td rowspan="8">A channel object.</td>
     </tr>
     <tr>
     	<td></td>
-    	<td>[__name__] 
+    	<td><b>name</b> (optional):
         A unique string identifier for the new channel.
         If a channel with that name exists, an error occurs.
         If omitted, a unique name is generated.
@@ -314,34 +314,40 @@ fs.readdir('*.pdf',function(err,files){
     </tr>
     <tr>
     	<td></td>
-    	<td>[__structure__] 
+    	<td><b>structure</b> (optional):
         Defines the data structure (see Structure object).
         If omitted, data messages must be empty.
         </td>
     </tr>
     <tr>
     	<td></td>
-    	<td>[__scope__] 
+    	<td><b>scope</b> (optional): 
+        Object whose properties are variables local to the channel and accesible by its event handlers.
         </td>
     </tr>
     <tr>
     	<td></td>
-    	<td>[__onMessage__] 
+    	<td><b>onMessage</b> (optional):
+        function([message[,scope]]) that consumes a message.
         </td>
     </tr>
     <tr>
     	<td></td>
-    	<td>[__onError__] 
+    	<td><b>onError</b> (optional):
+        function([error[,scope]]) that is called when an error occurs.
         </td>
     </tr>
     <tr>
     	<td></td>
-    	<td>[__onPause__] 
+    	<td><b>onPause</b> (optional):
+        function([scope]) that is called when channel enters in paused state.
         </td>
     </tr>
     <tr>
     	<td></td>
-    	<td>[__onResume__] 
+    	<td><b>onResume</b> (optional):
+        function([scope]) that is called when channel leaves paused state and all pending messages have been consumed.
+        If sending a resume control message while in normal state, the channel will consume any previous data messages and then will fire the onResume handler immediately.
         </td>
     </tr>
     
