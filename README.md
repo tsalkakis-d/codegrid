@@ -60,11 +60,11 @@ Perform a simple callback without arguments:
 
 function A() {
 	// ... 
-    cg.emit(channel);	// Send message to channel when A is finished
+    cg.message(channel);	// Send message to channel when A is finished
 }
 
 var channel = cg.channel({	// Create an anonymous channel
-	onMessage: function B(){ // Fired to consume a received message
+	onConsume: function B(){ // Fired to consume a received message
     	// ... 
     }
 });
@@ -76,17 +76,17 @@ Two functions that call the same callback function:
 
 function A1() { 
 	// ... 
-	cg.emit('channel1');
+	cg.message('channel1');
 }
 
 function A2() { 
 	// ... 
-	cg.emit('channel1');
+	cg.message('channel1');
 }
 
 cg.channel({	// Create a named channel
 	name: 'channel1',
-	onMessage: function B(){
+	onConsume: function B(){
     	// ... 
     }
 });
@@ -98,12 +98,12 @@ Callback passing a plain string:
 
 function A() {
 	// ... 
-    cg.emit(channel,'done');
+    cg.message(channel,'done');
 }
 
 var channel = cg.channel({	// Create an anonymous channel
 	structure: 'string',
-	onMessage: function B(s) {
+	onConsume: function B(s) {
     	console.log(s);
     }
 });
@@ -117,7 +117,7 @@ Callback passing a complex object:
 function A() {
 	// ... Read a person from database to ...
     person.source = 'database'; // Add some more info to person
-    cg.emit(persons,person);	// Send person to B
+    cg.message(persons,person);	// Send person to B
 }
 var persons = cg.channel({	// Create an anonymous channel for consuming persons
 	structure: {	// Define properties of data message:
@@ -150,7 +150,7 @@ var persons = cg.channel({	// Create an anonymous channel for consuming persons
             optional:true
         },
     },
-	onMessage: function B(person){ // Called when a valid message is received
+	onConsume: function B(person){ // Called when a valid message is received
     	// Person is guaranteed to have the defined structure
     	console.log(person.name,person.address.street,person.address.streetNo);
     },
@@ -164,30 +164,32 @@ Replacing a callback hell:
 ```js
 // A calls B, then B calls C, then C calls D
 
-cg.channel({name:'A-B', onMessage: B});
-cg.channel({name:'B-C', onMessage: C});
-cg.channel({name:'C-D', onMessage: D});
-
 function A() {
 	// ...
-	cg.emit('A-B');
+	cg.message('->B');
 }
 
 function B() {
 	// ...
-	cg.emit('B-C');
+	cg.message('->C');
 }
 
 function C() {
 	// ...
-	cg.emit('C-D');
+	cg.message('->D');
 }
 
 function D() {
 	// ...
 }
 
-// Converting the above functions to promises would surely need more effort
+// Create channels, using names that help understanding the flow
+cg.channel({name:'->B', onConsume: B});
+cg.channel({name:'->C', onConsume: C});
+cg.channel({name:'->D', onConsume: D});
+
+A();
+
 ```
 
 Serial execution #1 (collect and process data, then output result):
@@ -197,7 +199,7 @@ Serial execution #1 (collect and process data, then output result):
 var channel = cg.channel({ 	// Channel to perform the addition
 	structure:'integer',	// Data messages will be integers
     scope: {sum:0},			// Calculate sum here
-    onMessage: function (n,scope) { // Executes when a message is received
+    onConsume: function (n,scope) { // Executes when a message is received
     	scope.sum += n;
     },
     onResume: function(scope) {
@@ -207,7 +209,7 @@ var channel = cg.channel({ 	// Channel to perform the addition
 
 // Add numbers
 for (var i=0;i<100;i++) {
-	cg.emit(channel,i);
+	cg.message(channel,i);
 }
 
 // Show result
@@ -221,7 +223,7 @@ Serial execution #2 (collect data, then process data, then output result):
 var channel = cg.channel({ // Channel to perform the addition
 	structure:'integer',	// Data messages will be integers
     scope: {sum:null},  // We can init scope later
-    onMessage: function (n,scope) { // Consume each data message (after resuming)
+    onConsume: function (n,scope) { // Consume each data message (after resuming)
     	scope.sum += n;
     },
     onPause: function(scope) { // Executes when pausing
@@ -272,16 +274,16 @@ cg.channel({
             },
         },
     },
-    onMessage: function(plainString) { //Called whenever there is an incoming message
+    onConsume: function(plainString) { //Called whenever there is an incoming message
 		console.log(plainString);	// Perhaps do some asynchronous work here
-		cg.emit('channelB',plainsString);	// Done, send a message to another channel
+		cg.message('channelB',plainsString);	// Done, send a message to another channel
     }
 });
 
 // Mix with callbacks
 fs.readdir('*.pdf',function(err,files){
 	files.forEach(function(file){
-		cg.emit('countFile');
+		cg.message('countFile');
     });
 });
 
@@ -301,7 +303,8 @@ Objects:
             	- [__options__]
             	An optional argument to determine the channel properties
             	If omitted, an anonymous channel will be created that receives empty data messages
-            	If present, it is an object with properties:
+                If options is a string, an already existing channel with this name will be returned (or null if no such channel exists).
+            	If options is an object, it may contain the following properties that define the channel behaviour:
 	        		- [__name__]
 					A unique string identifier for the new channel.
 			      	If a channel with that name exists, an error will occur.
@@ -314,7 +317,7 @@ Objects:
 			        Object whose properties will be variables local to the channel and accesible by its event handlers.
                     If omitted, an empty scope {} will be created.
                     If present, scope will be initialized with this value.
-		    		- [__onMessage__]
+		    		- [__onConsume__]
 		        	function([message[,scope]]) is fired when a message is ready to be consumed and consumes that message.
 					- [__onError__]
 			        function([error[,scope]]) is fired when an error occurs.
@@ -327,12 +330,12 @@ Objects:
 			A channel object.
             If an error occured in channel creation, channel.error holds the error details.
 
-		- __.emit__(channel[,message])
+		- __.message__(channel[,message])
 			- __Purpose__
 			Sends a data message to a channel
 			- __Usage__
-				- .emit(channel) sends an empty data message to a channel. Channel should allow only empty data messages.
-            	- .emit(channel,message) sends a data object to a channel. Data object must be valid according to the channel structure.
+				- .message(channel) sends an empty data message to a channel. Channel should allow only empty data messages.
+            	- .message(channel,message) sends a data object to a channel. Data object must be valid according to the channel structure.
 			- __Arguments__
             	- [__channel__]
             	The channel to send the data.
@@ -342,7 +345,22 @@ Objects:
             	The data object to send to the channel.
                 When channel receives the message, it will perform validations to check if it complies to the declared structure for the objects handled by that channel.
 
-		- __.pause__([channel[,count])
+		- __.messages__(channel,messages)
+			- __Purpose__
+			Sends an array of data messages to a channel
+			- __Usage__
+				- .messages(channel,n) sends n empty data message to a channel, where n is an integer. 
+            	- .messages(channel,arr) sends some data messages to a channel, where arr is the array containing the data messages.
+			- __Arguments__
+            	- [__channel__]
+            	The channel to send the data.
+                If string, it is the channel name.
+                If object, it is the channel object returned from .channel()
+            	- [__messages__]
+                If messages is a number, it is the number of empty data messages to send.
+                If messages is an array, it contains the data messages to send.
+
+		- __.pause__([channel[,count]])
 			- __Purpose__
 			Sends a pause control message to set the channel in paused state.
             Channel enters the paused state and onPause handler fires.
@@ -359,7 +377,7 @@ Objects:
             	The number of data messages to receive before resuming automatically.
                 If count is 0 or null, a resume control signal will be added immediately in the queue.
 
-		- __.resume__([channel)
+		- __.resume__([channel])
 			- __Purpose__
 			Sends a resume control message to set the channel in normal state. 
             If there are any data messages pending, they are consumed in the order they were arrived.
@@ -372,7 +390,7 @@ Objects:
                 If string, it is the channel name.
                 If object, it is the channel object returned from .channel()
 
-- __Structure object__
+- __Structure object required in channel()__
 	- __Properties__
 		- __[type]__
 		String that indicates the data type. Available types are:
@@ -407,4 +425,22 @@ Objects:
         	- If type is __datetime__, max is a datetime defining the maximum acceptable value of data
         	- If type is __array__, max is an integer defining the maximum acceptable length of the array items
        	
+- __Channel object returned by channel()__
+	- __Properties__
+
+		- __.message__([,message])
+		- __.messages__([,messages])
+		- __.pause__([count])
+		- __.resume__() 
+        The above functions are equvalent to the corresponding library functions. 
+        The only difference is that the channel argument is not required.
+		- __.onConsume__(function) 
+        Define the consume event handler
+		- __.onError__(function) 
+        Define the error event handler
+		- __.onPause__(function) 
+        Define the pause event handler
+		- __.onResume__(function) 
+        Define the resume event handler
+
 
