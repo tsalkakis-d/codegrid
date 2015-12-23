@@ -1,8 +1,9 @@
 # codegrid
 Implement messages and asynchronous programming in Node.js and browser Javascript.
 An alternative to callbacks and promises, easy to read, easy to expand.
-##### Status Under construction!
+##### Status: Under construction! Stable version coming soon
 Do not use in production, it will not work yet.
+Keep in mind than the present documentation is constantly changing until declared stable.
 Please contact the author if you have any suggestions or if you feel that you can contribute.
 
 ## Table of Contents
@@ -25,8 +26,10 @@ Please contact the author if you have any suggestions or if you feel that you ca
 		*  `Property` channel([options])
 		*  `Property` message(channel[,message])
 		*  `Property` messages(channel,messages)
-		*  `Property` pause([channel[,count]])
-		*  `Property` resume([channel])
+		*  `Property` pause(channel[,count])
+		*  `Property` resume(channel)
+		*  `Property` flush(channel)
+		*  `Property` next(channel,nextChannel)
 	* `Object` Structure object required in channel()
 		*  `Property` [type]
 		*  `Property` [structure]
@@ -34,10 +37,12 @@ Please contact the author if you have any suggestions or if you feel that you ca
 		*  `Property` [min]
 		*  `Property` [max]
 	* `Object` Channel object returned by channel()
-		*  `Property` message([,message])
-		*  `Property` messages([,messages])
+		*  `Property` message([message])
+		*  `Property` messages(messages)
 		*  `Property` pause([count])
 		*  `Property` resume() 
+		*  `Property` flush() 
+		*  `Property` next(nextChannel) 
 		*  `Property` onConsume(function) 
 		*  `Property` onError(function) 
 		*  `Property` onPause(function) 
@@ -54,19 +59,32 @@ While promises implement asynchronous programming by giving emphasis on code, _c
 Also, task automation becomes easier when information is kept in data rather than in code.
 
 To understand how codegrid works, imagine that an application can be drawn in a two-dimensional diagram:
-- The horizontal axis of the diagram is the code flow, while the vertical axis is the data flow. 
+- The X-axis of the diagram is the code flow, while the Y-axis is the data flow. 
 - A sequence of code instructions is drawn as a horizontal narrow rectangle: Code inside the sequence executes from left to right.
 - A queue of data objects is drawn as a vertical narrow rectangle: Data items are received on the queue top and they are consumed sequentially on the queue bottom.
 - Arrows from codes to queues indicate the points where functions send data to the queues.
 - Arrows from queues to codes indicate the event handlers that fire on queue events.
+- The X-axis code is by its nature synchronous, while the Y-axis data is by its nature asynchronous.
 
-![ Diagram ](/diagrams/1.Concept.svg)
+![ Diagram ](diagrams/1.Concept.svg)
 
 ## Definitions
-- __channel__  A data buffer with event handlers.
-A channel receives data messages, stores them in a FIFO buffer and then fires an event handler to consume them.
-- __data message__ 
-A data object with a specific structure. 
+- __channel__  A data queue with event handlers
+A channel receives messages or control signals.
+- __message__  A data object send to a channel
+Messages are stored to the channel message queue. 
+When a message in queue is ready for consumption, it is removed from the queue and consumed by the consume handler function.
+- __signal__ A special control message sent to a channel.
+Signals may be processed immediately or may be stored in a separate signal queue to be processed later.
+Signal types are:
+	- __pause__  Processed immediately. Channel enters the paused state. Consuming is stopped.
+	- __resume__ Processed immediately. Channel returns to the normal state. All pending data messages are consumed.
+	- __flush__  Processed immediately. Channel returns to the normal state. All pending data messages are flushed without consuming.
+	- __next__  An argument (nextChannel) is also provided. Pass nextChannel 
+There are two types of messages: 
+	- __data message__  An object sent from any code to the channel.
+	- __control message__  A special object 
+	A data object with a specific structure. 
 Messages are sent from code to channels, where they are consumed.
 All data messages that arrive to a channel must have the same structure.
 - __channel state__
@@ -74,10 +92,7 @@ A channel can be in one of the following operation states:
 	- __normal state__ Data messages are consumed as soon as possible.
 	- __paused state__ Data messages are stored to be consumed later.
 - __control message__
-Channels switch their state when they receive one of the following control messages:
-	- __pause__  Channel enters the paused state. Consuming is stopped.
-	- __resume__ Channel returns to the normal state. All pending data messages are consumed.
-	- __flush__ Channel returns to the normal state. All pending data messages are flushed without consuming.
+A channel may receive one of the following controll messages:
 - __event handler__ 
 A function that fires when a specific condition occurs in a channel:
 	- __message handler__ Fires to consume a data message and remove it from the queue
@@ -209,33 +224,51 @@ var persons = cg.channel({	// Create an anonymous channel for consuming persons
 ###### Example 6
 ##### Replacing a callback hell
 ```js
-// A calls B, then B calls C, then C calls D
+// Chain call of A,B,C,D
+// B output is a (x,y) object that is passing to C as input message
+// C output is processed by the application before sending it to D
 
-function A() {
-	// ...
-	cg.message('->B');
+function A(callback) {
+	// ... 
+    if (callback)
+    	callback();
 }
 
-function B() {
+function B(callback) {
 	// ...
-	cg.message('->C');
+    if (callback)
+    	callback({x:100,y:50});
 }
 
-function C() {
-	// ...
-	cg.message('->D');
+function C(msg,callback) {
+	console.log(msg.x,msg.y);	// 100,50
+    if (callback)
+    	callback(5);
+    // ...
 }
 
-function D() {
-	// ...
+function D(result) {
+	console.log(result);	// 7
 }
 
-// Create channels, using names that help understanding the flow
-cg.channel({name:'->B', onConsume: B});
-cg.channel({name:'->C', onConsume: C});
-cg.channel({name:'->D', onConsume: D});
+var chA = cg.channel({onConsume: A});
+var chB = cg.channel({onConsume: B});
+var chC = cg.channel({
+	structure: {type:'object',structure:{x:'integer',y:'integer'}},
+	onConsume: C,
+});
+var chD = cg.channel({
+	structure: 'integer',
+	onConsume: D
+});
 
-A();
+// Define a temporal execution chain
+chA.callback(chB); // Consume chA using callback, then take back the result and send it to next channel
+chB.callback(chC);
+chC.callback(chD, function(msg,callback){callback(msg+2)});
+
+// Start the execution chain
+chA.message();
 
 ```
 
@@ -365,45 +398,55 @@ fs.readdir('*.pdf',function(err,files){
 ```
 
 ## API
-- `Object` __Library object returned by require('codegrid')__
-	- `Property` __channel__([options])
-		- __Purpose__
-		Create a new channel or return an existing one
-		- __Usage__
-			- channel(options) creates a new channel.
-			- channel(name) returns the existing channel with that name.
-        - `Argument` [__options__]
-        An optional argument to determine the channel properties
-        If omitted, an anonymous channel will be created that receives empty data messages
-        If options is a string, an already existing channel with this name will be returned (or null if no such channel exists).
-        If options is an object, it may contain the following properties that define the channel behaviour:
-        	- `Property` [__name__]
+- __Library object returned by require('codegrid')__ `Object` 
+	- __channel__([options]) `Property`
+	Create a new channel or search by name for an already existing channel.  Return the channel object.
+	channel() creates a new anonymous channel.
+	channel(options) creates a new channel or returns an existing one.
+        - __options__ `Argument`
+        Determine the channel properties or search for an existing channel.
+       	If options is a string, an existing channel with this name will be returned (or null if no such channel exists).
+       	If options is an object, it may contain the following properties that define the channel behaviour:
+        	- __name__ `Property` (optional)
 			A unique string identifier for the new channel.
 		    If a channel with that name exists, an error will occur.
 		    If omitted (anonymous channel), a unique name will be generated.
-			- `Property` [__structure__]
+			- __structure__ `Property` (optional)
 	        Defines the structure of the data messages handled by this channel.
             If object, see Structure object below for available properties.
 		    If string, data message must be a single variable of this type. See property .type of Structure object for available types.
-			- `Property` [__scope__]
+			- __scope__ `Property` (optional)
 		    Object whose properties will be variables local to the channel and accesible by its event handlers.
             If omitted, an empty scope {} will be created.
             If present, scope will be initialized with this value.
-	    	- `Property` [__onConsume__([message[,scope]])]
-	        onConsume() is fired to consume a message.
+	    	- __onConsume__([message]) `Property` (optional)
+	        Event handler function which is fired to consume a message.
             If omitted, no consuming will be performed and messages are silently discarded.
-			- `Property` [__onError__([error[,scope]])]
-		    onError() is fired when an error occurs.
+            The _this_ keyword inside the function refers to the channel object.
+            	- __message__  `Argument` (optional)
+            	The received message. Omitted if channel receives empty messages or if message is optional and missing.
+			- __onError__(error) `Property` 
+		    Error handler fired when an error occurs.
             If omitted and an error occurs, an exception is thrown.
-	        - `Property` [__onPause__([scope])]
+            	- __error__  `Argument`
+            	Error object contains details about the error. It may contain the following properties:
+            		- __message__ `Property` (optional)
+            		The received message. Omitted if error did not occured in consuming or if channel structure is not defined.
+                    - __scope__  `Property`
+                    The channel scope.
+                    - __self__  `Property`
+                    This channel.
+                    - __next__  `Property` (optional)
+                    The name of the channel that should be notified. 
+                    Omitted if no pending next signal exists or if error did not occured in consuming.
+	        - __onPause__(scope) `Property` (optional)
 	        onPause() is fired when channel enters in paused state.
-	    	- `Property` [__onResume__([scope])]
+	    	- __onResume__([scope]) `Property` (optional)
 		    onResume() is fired when channel leaves paused state and all pending messages have been consumed.
 	        If sending a resume control message while in normal state, the channel will consume any previous data messages and then will fire onResume().
 		- __Returns__
 		A channel object.
         If an error occured in channel creation, channel.error holds the error details.
-
 	- `Property` __message__(channel[,message])
 		- __Purpose__
 		Sends a data message to a channel
@@ -432,7 +475,7 @@ fs.readdir('*.pdf',function(err,files){
         If messages is a number, it is the number of empty data messages to send.
         If messages is an array, it contains the data messages to send.
 
-	- `Property` __pause__([channel[,count]])
+	- `Property` __pause__(channel[,count])
 		- __Purpose__
 		Sends a pause control message to set the channel in paused state.
         Channel enters the paused state and onPause handler fires.
@@ -448,7 +491,7 @@ fs.readdir('*.pdf',function(err,files){
         The number of data messages to receive before resuming automatically.
         If count is 0 or null, a resume control signal will be added immediately in the queue.
 
-	- `Property` __resume__([channel])
+	- `Property` __resume__(channel)
         - __Purpose__
         Sends a resume control message to set the channel in normal state. 
         If there are any data messages pending, they are consumed in the order they were arrived.
@@ -459,6 +502,18 @@ fs.readdir('*.pdf',function(err,files){
         The channel to send the data.
         If string, it is the channel name.
         If object, it is the channel object returned from .channel()
+
+	- `Property` __next__(channel,nextChannel)
+        - __Purpose__
+        Sends a next control message to a channel to set the channel in next state. 
+        When a channel is in next state and a message arrives, the onNext handler is executed, passing nextChannel as the first argument.
+        - __Usage__
+            - next(channel,nextChanner) sends a next control message.
+        - `Argument` [__channel__]
+        The channel to send the data.
+        If string, it is the channel name.
+        If object, it is the channel object returned from .channel()
+
 
 - `Object` __Structure object required in channel()__
     - `Property` __[type]__
@@ -495,11 +550,16 @@ fs.readdir('*.pdf',function(err,files){
         - If type is __array__, max is an integer defining the maximum acceptable length of the array items
        	
 - `Object` __Channel object returned by channel()__
-    - `Property` [__message__([,message])]
-    - `Property` [__messages__([,messages])]
-    - `Property` [__pause__([count])]
-    - `Property` [__resume__()]<br>The above functions are similar to the library object functions. 
-    The only difference is that the channel argument is missing, since the property object is the channel object.
+    - __message__([message]) `Property` Like the library object method, except that channel is the object itself.
+    - __messages__([messages]) `Property` Like the library object method, except that channel is the object itself.
+    - __pause__([count]) `Property` Like the library object method, except that channel is the object itself.
+    - __resume__() `Property` Like the library object method, except that channel is the object itself.
+    - __flush__() `Property` Like the library object method, except that channel is the object itself.
+    - __next__ `Property` (optional)
+    A string with the name of the channel to notify after consuming is done. 
+    The consume handler is responsible to read this property and send messages to the appropriate channel. 
+    When a _next_ control message is received, the nextChannel of the message is written to this property. 
+    When a message is consumed
     - `Property` [__onConsume__(function)]
     Define the consume event handler
     - `Property` [__onError__(function)]
