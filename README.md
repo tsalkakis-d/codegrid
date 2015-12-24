@@ -5,6 +5,7 @@ An alternative to callbacks and promises, easy to read, easy to expand.
 Do not use in production, it will not work yet.
 Keep in mind than the present documentation is constantly changing until declared stable.
 Please contact the author if you have any suggestions or if you feel that you can contribute.
+Suggestions for alternative names to objects properties are welcome.
 
 ## Table of Contents
 
@@ -56,9 +57,23 @@ Please contact the author if you have any suggestions or if you feel that you ca
 
 While promises implement asynchronous programming by giving emphasis on code, _codegrid_ attempts a different approach by moving the weight on data. This gives _codegrid_ an advantage when building large scale applications, because the art of programming is more mature for creating large quantities of data than creating large quantities of code. Increasing the code can lead quickly to applications that are very difficult to maintain. On the other side, increasing the data is a simpler process, as long as we follow two important principles: Define well and repeat often our data structures.
 
-Also, task automation becomes easier when information is kept in data rather than in code.
+## How it works
 
-To understand how codegrid works, imagine that an application can be drawn in a two-dimensional diagram:
+codegrid uses events to create data queues named channels.
+Channels receive data objects, named messages.
+Channel messages have a specific structure. If an incoming message does not comply to the structure rules of the channel, the message is discarded and an error is thrown.
+Channel messages are consumed one by one, in the order they were received. Consuming is performed by a consume handler function and may be asynchronous. When done, the consume handler will notify the channel via a callback or a promise.
+When a consume handler is consuming/processing a message, it may emit new messages to other channels. This way, an application can perform complex asynchronous tasks by combining channels and their consume handlers.
+While the above mechanism in theory is sufficient, in practice it is not flexible enough. If we create a channel, we must hardwire inside the consume handler the channel(s) to receive the result message(s). This means that the called code must always know about the caller, which is not good.
+For this reason, we introduce the chain. A chain is a series of channels with some glue code between them.
+
+explicitely declare the channel where to send the result messages Many times, we want to create a chain of channels, where each channel sends a message to the next channel when done. However, the details of each channel are not known in design time, but in execution time.
+execute sequentially a series of code to link chain N channels but their  The message handler of each channel may not know during design time the destination channel
+
+
+
+
+To understand visually how codegrid works, imagine that an application can be drawn in a two-dimensional diagram:
 - The X-axis of the diagram is the code flow, while the Y-axis is the data flow. 
 - A sequence of code instructions is drawn as a horizontal narrow rectangle: Code inside the sequence executes from left to right.
 - A queue of data objects is drawn as a vertical narrow rectangle: Data items are received on the queue top and they are consumed sequentially on the queue bottom.
@@ -70,35 +85,28 @@ To understand how codegrid works, imagine that an application can be drawn in a 
 
 ## Definitions
 - __channel__  A data queue with event handlers
-A channel receives messages or control signals.
+	A channel receives messages or signals.
 - __message__  A data object send to a channel
-Messages are stored to the channel message queue. 
-When a message in queue is ready for consumption, it is removed from the queue and consumed by the consume handler function.
+	Messages are stored to the channel message queue.
+	When a message in queue is ready for consumption, it is removed from the queue and consumed by the consume handler function.
+	All messages that arrive to a channel must have the same structure (defined in channel configuration).
 - __signal__ A special control message sent to a channel.
-Signals may be processed immediately or may be stored in a separate signal queue to be processed later.
-Signal types are:
-	- __pause__  Processed immediately. Channel enters the paused state. Consuming is stopped.
-	- __resume__ Processed immediately. Channel returns to the normal state. All pending data messages are consumed.
-	- __flush__  Processed immediately. Channel returns to the normal state. All pending data messages are flushed without consuming.
-	- __next__  An argument (nextChannel) is also provided. Pass nextChannel 
-There are two types of messages: 
-	- __data message__  An object sent from any code to the channel.
-	- __control message__  A special object 
-	A data object with a specific structure. 
-Messages are sent from code to channels, where they are consumed.
-All data messages that arrive to a channel must have the same structure.
+	Signals may be processed immediately or may be stored in a separate signal queue to be processed later.
+	Signal types are:
+	- __PAUSE__  Processed immediately. Channel enters the paused state. Consuming is stopped.
+	- __RESUME__ Processed immediately. Channel returns to the normal state. All pending data messages are consumed.
+	- __FLUSH__  Processed immediately. Channel returns to the normal state. All pending data messages are flushed without consuming.
+	- __CHAIN__  Pushed in signal queue. Next onConsume will send a message to next channel. argument nextChannel is provided.
 - __channel state__
 A channel can be in one of the following operation states: 
-	- __normal state__ Data messages are consumed as soon as possible.
-	- __paused state__ Data messages are stored to be consumed later.
-- __control message__
-A channel may receive one of the following controll messages:
+	- __normal state__ Messages are consumed as soon as possible.
+	- __paused state__ Messages are stored to be consumed later.
 - __event handler__ 
-A function that fires when a specific condition occurs in a channel:
-	- __message handler__ Fires to consume a data message and remove it from the queue
+A function provided by application that fires when a specific condition occurs in a channel:
+	- __message handler__ Fires to consume a message and remove it from the message queue
 	- __error handler__ Fires when an error occurs inside a handler
-	- __pause handler__ Fires when a pause control message is received
-	- __resume handler__ Fires when a resume control message is received
+	- __pause handler__ Fires when a PAUSE signal is received
+	- __resume handler__ Fires when a RESUME signal is received
 - __channel scope__  
 A special data container in channel for storing local variables, accessible from handlers.
 A message handler may process the incoming messages and keep some data here.
@@ -106,68 +114,137 @@ A message handler may process the incoming messages and keep some data here.
 ## Examples
 
 ###### Example 1
-##### Include _codegrid_ in a Node.js module
+##### Include codegrid in Node modules
+First, you have to download and include the library:
+```
+npm install codegrid --save
+```
+Then, on each module:
 ```js
 var cg = require('codegrid');
 ```
 
 ###### Example 2
-##### Perform a simple callback without arguments
+##### Plain callback
 ```js
-// A executes first, then B executes
+// A executes first. When done, B executes
 
 function A() {
-	// ... 
-    cg.message(channel);	// Send message to channel when A is finished
+	console.log('#1');
+    setTimeout(function(){
+    	channel.message();	// Send message to channel B when done
+    },1000);
+	console.log('#2');
 }
 
-var channel = cg.channel({	// Create an anonymous channel
-	onConsume: function B(){ // Fired to consume a received message
-    	// ... 
-    }
-});
+function B() {
+	console.log('#3');
+}
+
+// Create an anonymous channel consumed by B
+var channel = cg.channel({onConsume: B})l
+
+// call A
+A();
+
+// Results displayed: #1,#2,#3
 ```
 
 ###### Example 3
-##### Two functions that call the same callback function
-```js
-// Callback B executes after either execution of A1 or A2
-
-function A1() { 
-	// ... 
-	cg.message('channel1');
-}
-
-function A2() { 
-	// ... 
-	cg.message('channel1');
-}
-
-cg.channel({	// Create a named channel
-	name: 'channel1',
-	onConsume: function B(){
-    	// ... 
-    }
-});
-```
-
-###### Example 4
-##### Callback passing a plain string
+##### Channel receiving a plain string
 ```js
 // A executes first, then passes a string to B, then B executes
 
 function A() {
-	// ... 
-    cg.message(channel,'done');
+	console.log('#1');
+    channel.message('#3');
+	console.log('#2');
 }
 
-var channel = cg.channel({	// Create an anonymous channel
+function B(message) {
+	console.log(message);
+}
+
+// Create an anonymous channel consumed by B
+var channel = cg.channel({
 	structure: 'string',
-	onConsume: function B(s) {
-    	console.log(s);
+	onConsume: B
+    }
+});
+
+A();
+
+// Results displayed: #1,#2,#3
+```
+
+###### Example 3
+##### Channel receiving a complex object
+```js
+var channel = cg.channel({	
+	structure: {	// Define message structure
+    	id: 'integer',	// An id
+        name: {type:'string',min:2,max:50},	// Name (2...50 characters)
+        age: {type:'integer',min:12,optional:true}, // Optional age (12...)
+        lastLogin: 'datetime',	// Last login
+        address: {	// Address 
+        	type: 'object',			// address is an object
+            structure: {			// with the following properties:
+	        	street: 'string',
+	            streetNo: 'string',
+	            zip: 'string',
+	            city: {type:'string', optional:true},
+             },
+        },
+        activities: { // An optional array
+        	type:'array',
+            optional: true,
+        	max:10,		// 10 activities max for each person
+			structure: { // Define structure of array items
+        		activityId: 'integer',	// Activity ID
+                startDate: 'date',		// Activity start date
+                endDate: {type:'date',optional:true}, // Activity end date
+                subActivities:{	// An optional array of subactivities for each activity
+                	type: 'array',
+                    optional: true,
+                    structure: 'integer',	// Structure of a subactivity
+                	},
+                },
+        },
+    },
+	onConsume: function (person){ // Called when a valid message is received
+    	// Consuming a person means that person is guaranteed to have the defined structure above
+    	console.log(person.name,person.address.street,person.address.streetNo,person.activities.length);
+    },
+    onError: function (channel) {	// Called if validation fails or if an exception occurs in message handler
+    	console.log(channel.error);
     }
 });
 ```
+
+
+
+###### Example 3
+##### Using channel by name
+```js
+// Sending a message to a channel not created in the same module requires referencing channel by name
+
+// Module 1
+
+cg.channel({	// Create a named channel
+	name: 'channelA',
+	onConsume: function B(){
+    	console.log('ok!');
+    }
+});
+
+
+
+// Module 2
+
+cg.channel('channelA').message();
+```
+
+
 
 ###### Example 5
 ##### Callback passing a complex object
@@ -222,58 +299,77 @@ var persons = cg.channel({	// Create an anonymous channel for consuming persons
 ```
 
 ###### Example 6
-##### Replacing a callback hell
+##### Chaining 
 ```js
-// Chain call of A,B,C,D
-// B output is a (x,y) object that is passing to C as input message
-// C output is processed by the application before sending it to D
+// Create an execution chain with functions
+// Application code between functions shapes the data for the next function
 
-function A(callback) {
-	// ... 
+// Load a (x,y) vector from database
+function vector_create(id,callback) {
+	database.query('SELECT x,y FROM vectors WHERE ID = '+id, function(result){
+        assert(result && result[0]);
+  		callback({result[0]);
+    });
+}
+
+// Multiply 2 vectors (used either as standalone or as callback)
+function vector_multiply(v1,v2,callback) {
+	var result = {x:v1.x*v2.x, y:v1.y*v2.y};
     if (callback)
-    	callback();
+    	callback(result);
+    else
+    	return result;
 }
 
-function B(callback) {
-	// ...
+// Add 2 vectors (used either as standalone or as callback)
+function vector_add(v1,v2,callback) {
+	var result = {x:v1.x+v2.x, y:v1.y+v2.y};
     if (callback)
-    	callback({x:100,y:50});
+    	callback(result);
+    else
+    	return result;
 }
 
-function C(msg,callback) {
-	console.log(msg.x,msg.y);	// 100,50
+// Sum of squares of array items
+function array_sumSquares(arr,callback) {
+	var result = arr.reduce(function(sum, x) {return sum + x*x;}, 0);
     if (callback)
-    	callback(5);
-    // ...
-}
-
-function D(result) {
-	console.log(result);	// 7
-}
-
-var chA = cg.channel({onConsume: A});
-var chB = cg.channel({onConsume: B});
-var chC = cg.channel({
-	structure: {type:'object',structure:{x:'integer',y:'integer'}},
-	onConsume: C,
+		callback(result);
+    else
+    	return result;
 });
-var chD = cg.channel({
-	structure: 'integer',
-	onConsume: D
-});
+}
 
-// Define a temporal execution chain
-chA.callback(chB); // Consume chA using callback, then take back the result and send it to next channel
-chB.callback(chC);
-chC.callback(chD, function(msg,callback){callback(msg+2)});
+// Display a result
+function show(result) {
+	console.log(result);
+}
 
-// Start the execution chain
-chA.message();
+// Define structures
+var s_vector = {type:'object',structure:{x:'integer',y:'integer'}};
+var s_array2 = {type:'array',structure:'integer', min:2, max:2}};
+
+// Create channels
+var vcreate = cg.channel({structure: s_array2, ,onConsume: vector_create});
+var vscalefix = cg.channel({structure: s_vector, onConsume: function(vector) {return vector_multiply(vector,{x:3,y:4});}});
+var vsumsquares = cg.channel({structure: s_array2, onConsume: });
+var chD = cg.channel({structure: 'integer',	onConsume: D});
+
+// Execute a chain
+vcreate.message([10,5])	// Create a vector (asynchronously)
+.chain(function(vector){return vector_add(vector,{x:3, y:5});})	// Add an offset (immediately)
+.chain(function(vector){return vector_add(vector,{x:2, y:1});})	// Add another offset (immediately)
+.chain()
+.chain({
+	adapt: function(vector){return [vector.x,vector.y]; }, // Convert vector to array 
+    next: chC}) // calculate sum of squares
+.chain(chD);	// Display result (no adapt required)
 
 ```
 
 ###### Example 7
-##### Serial execution (collect and process data, then output result)
+##### Serial execution 1
+
 ```js
 // Add numbers from 1 to 100, show the result
 
